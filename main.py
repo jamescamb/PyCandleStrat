@@ -7,10 +7,14 @@ along with some summary statistics on the returns from that strategy (i.e., win 
 We assume that so long as a stop or take profit is within the relevant time periods range, it was possible to trade there.
 """
 
-from data import read_local_file
+from data import read_local_file, check_bad_values, correct_dates, correct_changes
 
 df = read_local_file("US-bond-yield.csv")
 if df is None:
     raise Exception("Program closing.")
-else:
-    print(df.head())
+
+check_bad_values(df)
+correct_dates(df)
+correct_changes(df)
+
+print(df.head())
