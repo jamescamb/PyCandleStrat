@@ -10,14 +10,18 @@ We assume that so long as a stop or take profit is within the relevant time peri
 from data import read_local_file, check_bad_values, correct_dates, correct_changes
 from plotting import summary_plot
 
-df = read_local_file("US-bond-yield.csv")
+country = "US"
+filename = country + "-bond-yield.csv"
+df = read_local_file(filename)
+
 if df is None:
     raise Exception("Program closing.")
+else:
+    check_bad_values(df)
+    correct_dates(df)
+    correct_changes(df)
 
-check_bad_values(df)
-correct_dates(df)
-correct_changes(df)
+start_date = "2020-06-11"
+end_date = "2024-06-11"
 
-print(df.head())
-
-summary_plot(df)
+summary_plot(country, df, start_date, end_date)

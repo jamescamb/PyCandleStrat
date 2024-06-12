@@ -54,3 +54,26 @@ def correct_changes(data: pd.DataFrame) -> pd.DataFrame:
     data["Change %"] = data["Change %"].apply(lambda x: float(x[:-1]))
 
     return data
+
+def check_date(date: str) -> None:
+    """
+    Make sure the string input date is valid,
+    otherwise raise an exception error
+    """
+
+    valid = True
+    arr = date.split("-")
+
+    if len(arr) != 3:
+        valid = False
+    else:
+        year, month, day = arr[0], arr[1], arr[2]
+        if len(year) != 4 or int(year) < 0:
+            valid = False
+        if int(month) > 12 or int(month) < 1:
+            valid = False
+        if int(day) > 31 or int(day) < 1:
+            valid = False
+
+    if valid == False:
+        raise Exception("Error: Invalid date entered")
