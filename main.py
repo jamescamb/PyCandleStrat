@@ -8,6 +8,7 @@ We assume that so long as a stop or take profit is within the relevant time peri
 """
 
 from data import read_local_file, check_bad_values, correct_dates, correct_changes
+from plotting import summary_plot
 
 df = read_local_file("US-bond-yield.csv")
 if df is None:
@@ -18,3 +19,5 @@ correct_dates(df)
 correct_changes(df)
 
 print(df.head())
+
+summary_plot(df)
