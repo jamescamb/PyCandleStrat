@@ -77,3 +77,17 @@ def check_date(date: str) -> None:
 
     if valid == False:
         raise Exception("Error: Invalid date entered")
+
+def filter_data(data: pd.DataFrame,
+                start_date: str,
+                end_date: str) -> pd.DataFrame:
+    """
+    Filter data by dates
+    """
+
+    start_date = pd.to_datetime(start_date, format="%Y-%m-%d")
+    end_date = pd.to_datetime(end_date, format="%Y-%m-%d")
+    mask = (data["Date"] >= start_date) & (data["Date"] <= end_date)
+    filtered_data = data.loc[mask]
+
+    return filtered_data

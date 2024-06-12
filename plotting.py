@@ -6,14 +6,15 @@ Make plots of financial data
 import pandas as pd
 import mplfinance as mpf
 import matplotlib.pyplot as plt
+import matplotlib.dates as mpdates
 
-from data import check_date
 from typing import Optional
+from data import check_date, filter_data
 
 def summary_plot(country: str,
                  data: pd.DataFrame,
                  start_date: Optional[str] = "2000-01-01",
-                 end_date: Optional[str] = "2025-01-01",) -> pd.DataFrame:
+                 end_date: Optional[str] = "2025-01-01") -> None:
     """
     Plot the overall trends of a dataset
     """
@@ -21,11 +22,7 @@ def summary_plot(country: str,
     # Start and end dates need to be in form 'YYYY-MM-DD'
     check_date(start_date)
     check_date(end_date)
-
-    start_date = pd.to_datetime(start_date, format="%Y-%m-%d")
-    end_date = pd.to_datetime(end_date, format="%Y-%m-%d")
-    mask = (data["Date"] >= start_date) & (data["Date"] <= end_date)
-    filtered_df = data.loc[mask]
+    filtered_df = filter_data(data, start_date, end_date)
 
     plt.subplot(3, 1, 1)
     plt.title(country + " 10-Year Bond Yield")
@@ -46,3 +43,29 @@ def summary_plot(country: str,
     plt.ylabel("Volatility")
 
     plt.show()
+
+def candlestick_plot(country: str,
+                     data: pd.DataFrame,
+                     start_date: Optional[str] = "2000-01-01",
+                     end_date: Optional[str] = "2025-01-01") -> None:
+    """
+    Plot a candelstick chart from a dataset
+    """
+
+    # Start and end dates need to be in form 'YYYY-MM-DD'
+    check_date(start_date)
+    check_date(end_date)
+    filtered_df = filter_data(data, start_date, end_date).copy()
+
+    filtered_df.rename(columns={"Price": "Close"}, inplace=True)
+
+    #filtered_df["Date"] = filtered_df["Date"].map(mpdates.date2num)
+    #filtered_df.index = pd.to_datetime(filtered_df.index)
+    filtered_df = filtered_df.set_index("Date")
+ 
+    mpf.plot(filtered_df.iloc[::-1],
+             type="candle",
+             style="charles",
+             title=country,
+             ylabel="Yield [%]",
+             xlabel="Trading Days")

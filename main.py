@@ -8,7 +8,7 @@ We assume that so long as a stop or take profit is within the relevant time peri
 """
 
 from data import read_local_file, check_bad_values, correct_dates, correct_changes
-from plotting import summary_plot
+from plotting import summary_plot, candlestick_plot
 
 country = "US"
 filename = country + "-bond-yield.csv"
@@ -21,7 +21,8 @@ else:
     correct_dates(df)
     correct_changes(df)
 
-start_date = "2020-06-11"
+start_date = "2024-01-11"
 end_date = "2024-06-11"
 
 summary_plot(country, df, start_date, end_date)
+candlestick_plot(country, df, start_date, end_date)
