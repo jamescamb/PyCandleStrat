@@ -58,9 +58,6 @@ def candlestick_plot(country: str,
     filtered_df = filter_data(data, start_date, end_date).copy()
 
     filtered_df.rename(columns={"Price": "Close"}, inplace=True)
-
-    #filtered_df["Date"] = filtered_df["Date"].map(mpdates.date2num)
-    #filtered_df.index = pd.to_datetime(filtered_df.index)
     filtered_df = filtered_df.set_index("Date")
  
     mpf.plot(filtered_df.iloc[::-1],
