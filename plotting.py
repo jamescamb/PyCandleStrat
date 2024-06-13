@@ -6,7 +6,6 @@ Make plots of financial data
 import pandas as pd
 import mplfinance as mpf
 import matplotlib.pyplot as plt
-import matplotlib.dates as mpdates
 
 from typing import Optional
 from data import check_date, filter_data
