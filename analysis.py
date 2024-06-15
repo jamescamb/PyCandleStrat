@@ -65,12 +65,15 @@ class Strategy:
         # Calculate the upper wick length
         self.data["U-Wick"] = self.data["High"] - self.data[["Open", "Price"]].max(axis=1)
         # Calculate local minimum over window size
-        window_size = 10
+        window_size = 7
         self.data["Min"] = (self.data["Price"] == self.data["Price"].rolling(window=window_size, center=True).min())
 
         if self.pattern == "hammer":
             print("Searching for bullish hammer pattern")
             self.hammer()
+        elif self.pattern == "inv_hammer":
+            print("Searching for bullish inverse hammer pattern")
+            self.inv_hammer()
         else:
             print("Error: Pattern not recognised")
 
@@ -85,17 +88,51 @@ class Strategy:
         but green hammers indicate a stronger bull market than red hammers.
         """
 
-        # Lower wick >= 200% of body
-        mask_long_wick = (2*self.data["Body"] <= self.data["L-Wick"])
-        # Body within the 20th percentile
-        q1_body = self.data["Body"].quantile(0.20)
+        # Lower wick >= 150% of body
+        mask_long_wick = (1.5*self.data["Body"] <= self.data["L-Wick"])
+        # Body within the 25th percentile
+        q1_body = self.data["Body"].quantile(0.25)
         mask_short_body = self.data["Body"] <= q1_body
         # Local minimum
         mask_minimum = self.data["Min"] == True
         
         mask = mask_long_wick & mask_short_body & mask_minimum
         filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No hammer pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Hammer patterns detected at:")
+            print(filtered_data)
         
         return filtered_data
 
+    def inv_hammer(self) -> pd.DataFrame:
+        """
+        A similarly bullish pattern is the inverted hammer.
+        The only difference being that the upper wick is long,
+        while the lower wick is short.
+        
+        It indicates a buying pressure,
+        followed by a selling pressure that was not strong enough to drive the market price down.
+        The inverse hammer suggests that buyers will soon have control of the market.
+        """
 
+        # Lower wick <= 25% of body
+        mask_short_wick = (0.25*self.data["Body"] >= self.data["L-Wick"])
+        # Upper wick >= 150% of body
+        mask_long_wick = (self.data["Body"] <= self.data["U-Wick"])
+        # Local minimum
+        mask_minimum = self.data["Min"] == True
+
+        mask = mask_short_wick & mask_long_wick & mask_minimum
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No inverse hammer pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Inverse hammer patterns detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
