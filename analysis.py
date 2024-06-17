@@ -43,14 +43,15 @@ class Strategy:
             check_bad_values(df)
             correct_dates(df)
             correct_changes(df)
-            df.sort_values(by = "Date", inplace = True)
+            df.sort_values(["Date"], ignore_index=True, inplace=True)
         
         mask = (df["Date"] >= start_date) & (df["Date"] <= end_date)
         self.data = df.loc[mask]
+        print("Selected", self.data.shape[0], "entries")
     
     def print_data(self, number: int) -> None:
         
-        print("Printing dataframe of top {} values by date".format(number))
+        print("Printing dataframe of first {} values by date".format(number))
         print(self.data.head(number))
 
     def initial_plot(self) -> None:

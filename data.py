@@ -19,6 +19,7 @@ def read_local_file(filename: str):
                                              "Low": 'float',
                                              "Change %": 'string'})
         print("Successfully read", filename, "into a Panda dataframe")
+        print("Bond yield data has", data.shape[0], "entries")
         
         return data
     except:
