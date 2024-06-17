@@ -6,7 +6,7 @@ Analysis of candelstick patterns
 import pandas as pd
 
 from typing import Optional
-from data import read_local_file, check_bad_values, correct_dates, correct_changes
+from data import read_local_file, check_bad_values, correct_dates, correct_changes, asym_rolling_min
 from plotting import summary_plot, candlestick_plot
 
 # List potential candlestick patterns
@@ -50,11 +50,17 @@ class Strategy:
         print("Selected", self.data.shape[0], "entries")
     
     def print_data(self, number: int) -> None:
+        """
+        Print the dataframe
+        """
         
         print("Printing dataframe of first {} values by date".format(number))
         print(self.data.head(number))
 
     def initial_plot(self) -> None:
+        """
+        Print some initial graphs
+        """
         
         # Print summary plot
         print("Printing summary plot")
@@ -64,6 +70,9 @@ class Strategy:
         candlestick_plot(self.country, self.data)
     
     def analyse_pattern(self) -> None:
+        """
+        Calculate important derivative data
+        """
 
         # Calculate body length
         self.data["Body"] = abs(self.data["Open"] - self.data["Price"])
@@ -71,9 +80,11 @@ class Strategy:
         self.data["L-Wick"] = self.data[["Open", "Price"]].min(axis=1) - self.data["Low"]
         # Calculate the upper wick length
         self.data["U-Wick"] = self.data["High"] - self.data[["Open", "Price"]].max(axis=1)
-        # Calculate local minimum over window size
-        window_size = 7
-        self.data["Min"] = (self.data["Price"] == self.data["Price"].rolling(window=window_size, center=True).min())
+        # Calculate local minimum over (asymmetrical) window size
+        #window_size = 7
+        #self.data["Min"] = (self.data["Price"] == self.data["Price"].rolling(window=window_size, center=True).min())
+        look_back, look_forward = 3, 2
+        self.data["Min"] = (self.data["Price"] == asym_rolling_min(self.data, look_back, look_forward))
 
         if self.pattern == "hammer":
             print("Searching for bullish hammer pattern")

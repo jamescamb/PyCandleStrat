@@ -92,3 +92,21 @@ def filter_data(data: pd.DataFrame,
     filtered_data = data.loc[mask]
 
     return filtered_data
+
+def asym_rolling_min(data: pd.DataFrame,
+                     look_back: int,
+                     look_forward: int) -> list:
+    """
+    Create an asymmetrical local minimum searching function
+    """
+
+    result = []
+    n = data.shape[0]
+
+    for i in range(n):
+        start = max(0, i - look_back)
+        end = min(n, i + look_forward + 1)
+        window = data["Price"][start:end]
+        result.append(min(window))
+
+    return result
