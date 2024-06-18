@@ -4,6 +4,7 @@ Import and read data, and convert it to a Pandas dataframe
 
 # Import libraries
 import pandas as pd
+from typing import Optional
 
 def read_local_file(filename: str):
     """
@@ -110,3 +111,21 @@ def asym_rolling_min(data: pd.DataFrame,
         result.append(min(window))
 
     return result
+
+def expanding_quantiles(data: pd.DataFrame,
+                        column: str,
+                        quantiles: Optional[list] = [0.25, 0.50, 0.75]) -> pd.DataFrame:
+    """
+    Calculate quantiles for a specific column called "column"
+    Data is time-consistent, i.e. we only use data up to that point in time
+    """
+
+    result = pd.DataFrame(index = data.index, columns=[f"{int(q*100)}" + " " + column for q in quantiles], dtype='float')
+
+    for i in range(1, len(data) + 1):
+        result.iloc[i - 1] = data[column].iloc[:i].quantile(quantiles).values
+    
+    new_data = pd.concat([data, result], axis=1)
+    
+    return new_data
+

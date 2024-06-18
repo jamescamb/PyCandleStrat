@@ -6,7 +6,8 @@ Analysis of candelstick patterns
 import pandas as pd
 
 from typing import Optional
-from data import read_local_file, check_bad_values, correct_dates, correct_changes, asym_rolling_min
+from data import read_local_file, check_bad_values, correct_dates
+from data import correct_changes, asym_rolling_min, expanding_quantiles
 from plotting import summary_plot, candlestick_plot
 
 # List potential candlestick patterns
@@ -80,10 +81,13 @@ class Strategy:
         self.data["L-Wick"] = self.data[["Open", "Price"]].min(axis=1) - self.data["Low"]
         # Calculate the upper wick length
         self.data["U-Wick"] = self.data["High"] - self.data[["Open", "Price"]].max(axis=1)
+        # Calculate quantile data of body length
+        self.data = expanding_quantiles(self.data, "Body", [0.25, 0.50])
         # Calculate local minimum over (asymmetrical) window size
         #window_size = 7
         #self.data["Min"] = (self.data["Price"] == self.data["Price"].rolling(window=window_size, center=True).min())
-        look_back, look_forward = 3, 2
+        # We can only detect a local minimum look_forward days after it has happened
+        look_back, look_forward = 3, 1
         self.data["Min"] = (self.data["Price"] == asym_rolling_min(self.data, look_back, look_forward))
 
         if self.pattern == "hammer":
@@ -92,6 +96,9 @@ class Strategy:
         elif self.pattern == "inv_hammer":
             print("Searching for bullish inverse hammer pattern")
             self.inv_hammer()
+        elif self.pattern == "bull_engulf":
+            print("Searching for bullish engulfing pattern")
+            self.bull_engulf()
         else:
             print("Error: Pattern not recognised")
 
@@ -109,10 +116,9 @@ class Strategy:
         # Lower wick >= 150% of body
         mask_long_wick = (1.5*self.data["Body"] <= self.data["L-Wick"])
         # Body within the 25th percentile
-        q1_body = self.data["Body"].quantile(0.25)
-        mask_short_body = self.data["Body"] <= q1_body
+        mask_short_body = (self.data["Body"] <= self.data["25 Body"])
         # Local minimum
-        mask_minimum = self.data["Min"] == True
+        mask_minimum = (self.data["Min"] == True)
         
         mask = mask_long_wick & mask_short_body & mask_minimum
         filtered_data = self.data.loc[mask]
@@ -139,9 +145,9 @@ class Strategy:
         # Lower wick <= 25% of body
         mask_short_wick = (0.25*self.data["Body"] >= self.data["L-Wick"])
         # Upper wick >= 150% of body
-        mask_long_wick = (self.data["Body"] <= self.data["U-Wick"])
+        mask_long_wick = (1.5*self.data["Body"] <= self.data["U-Wick"])
         # Local minimum
-        mask_minimum = self.data["Min"] == True
+        mask_minimum = (self.data["Min"] == True)
 
         mask = mask_short_wick & mask_long_wick & mask_minimum
         filtered_data = self.data.loc[mask]
@@ -154,3 +160,32 @@ class Strategy:
 
         return filtered_data
     
+    def bull_engulf(self) -> pd.DataFrame:
+        """
+        The bullish engulfing pattern is formed of two candlesticks.
+        The first candle is a short red body that is completely engulfed by a larger green candle.
+        
+        Though the second day opens lower than the first,
+        the bullish market pushes the price up,
+        culminating in an obvious win for buyers.
+        """
+
+        # Second candle has a green body
+        mask_second_red = (self.data["Price"] > self.data["Open"])
+        # First candle has a red body
+        mask_first_green = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
+        # First candle has a short body (body within the 50th percentile)
+        mask_first_short = (self.data["Body"].shift(1) <= self.data["50 Body"].shift(1))
+        # First candle is engulfed by the second candle
+        mask_engulf = (self.data["Open"] < self.data["Price"].shift(1)) & (self.data["Price"] > self.data["Open"].shift(1))
+
+        mask = mask_second_red & mask_first_green & mask_first_short & mask_engulf
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No inverse hammer pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Inverse hammer patterns detected at:")
+            print(filtered_data)
+
+        return filtered_data
