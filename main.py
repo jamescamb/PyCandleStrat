@@ -14,3 +14,10 @@ strat = Strategy(country, pattern, start_date)
 #strat.print_data(10)
 strat.initial_plot()
 strat.analyse_pattern()
+
+# TODO:
+# Finish candlestick patterns
+# Momentum trader
+# Hidden Markov model
+# Monte Carlo simulations
+# ML approaches
