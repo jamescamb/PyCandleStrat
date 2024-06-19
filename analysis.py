@@ -105,6 +105,9 @@ class Strategy:
         elif self.pattern == "morning":
             print("Searching for morning star pattern")
             self.morning()
+        elif self.pattern == "soldiers":
+            print("Searching for three white soldier pattern")
+            self.soldiers()
         else:
             print("Error: Pattern not recognised")
 
@@ -258,6 +261,36 @@ class Strategy:
             print("No morning star pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Morning star pattern detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def soldiers(self) -> pd.DataFrame:
+        """
+        The three white soldiers pattern occurs over three days.
+        It consists of consecutive long green (or white) candles with small wicks,
+        which open and close progressively higher than the previous day.
+        
+        It is a very strong bullish signal that occurs after a downtrend,
+        and shows a steady advance of buying pressure.
+        """
+
+        # All three bodies are green
+        mask_green = (self.data["Price"] > self.data["Open"]) & (self.data["Price"].shift(1) > self.data["Open"].shift(1)) & (self.data["Price"].shift(2) > self.data["Open"].shift(2))
+        # All three candles have small wicks (less than 25% of the body)
+        mask_upper_wicks = (0.25*self.data["Body"] >= self.data["U-Wick"]) & (0.25*self.data["Body"].shift(1) >= self.data["U-Wick"].shift(1)) & (0.25*self.data["Body"].shift(2) >= self.data["U-Wick"].shift(2))
+        mask_lower_wicks = (0.25*self.data["Body"] >= self.data["L-Wick"]) & (0.25*self.data["Body"].shift(1) >= self.data["L-Wick"].shift(1)) & (0.25*self.data["Body"].shift(2) >= self.data["L-Wick"].shift(2))
+        # Successive candles open and close progressively higher
+        mask_close = (self.data["Price"] > self.data["Price"].shift(1)) & (self.data["Price"].shift(1) > self.data["Price"].shift(2))
+        mask_open = (self.data["Open"] > self.data["Open"].shift(1)) & (self.data["Open"].shift(1) > self.data["Open"].shift(2))
+
+        mask = mask_green & mask_lower_wicks & mask_upper_wicks & mask_close & mask_open
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No three white soldier pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Three white soldier pattern detected at:")
             print(filtered_data)
 
         return filtered_data
