@@ -102,6 +102,9 @@ class Strategy:
         elif self.pattern == "piercing":
             print("Searching for piercing line pattern")
             self.piercing()
+        elif self.pattern == "morning":
+            print("Searching for morning star pattern")
+            self.morning()
         else:
             print("Error: Pattern not recognised")
 
@@ -178,7 +181,7 @@ class Strategy:
         # First candle has a red body
         mask_first_green = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
         # First candle has a short body (body within the 50th percentile)
-        mask_first_short = (self.data["Body"].shift(1) <= self.data["50 Body"].shift(1))
+        mask_first_short = (self.data["Body"].shift(1) <= self.data["50 Body"])
         # First candle is engulfed by the second candle
         mask_engulf = (self.data["Open"] < self.data["Price"].shift(1)) & (self.data["Price"] > self.data["Open"].shift(1))
 
@@ -209,7 +212,7 @@ class Strategy:
         # First candle has a red body
         mask_first_green = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
         # Both candles have long bodies (body greater than the 50th percentile)
-        mask_first_long = (self.data["Body"].shift(1) >= self.data["50 Body"].shift(1))
+        mask_first_long = (self.data["Body"].shift(1) >= self.data["50 Body"])
         mask_second_long = (self.data["Body"] >= self.data["50 Body"])
         # Significant gap down between first candle price and second candle opening
         mask_gap_down = (self.data["Price"].shift(1) - self.data["Open"] >= self.data["25 Body"])
@@ -222,7 +225,39 @@ class Strategy:
         if filtered_data.empty:
             print("No piercing line pattern detected from", self.start_date, "to", self.end_date)
         else:
-            print("Piercint line patterns detected at:")
+            print("Piercing line patterns detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def morning(self) -> pd.DataFrame:
+        """
+        The morning star candlestick pattern is considered a sign of hope in a bleak market downtrend.
+        It is a three-stick pattern: one short-bodied candle between a long red and a long green.
+        Traditionally, the 'star' will have no overlap with the longer bodies,
+        as the market gaps both on open and close.
+        
+        It signals that the selling pressure of the first day is subsiding,
+        and a bull market is on the horizon.
+        """
+
+        # Third candle has a green body
+        mask_third_green = (self.data["Price"] > self.data["Open"])
+        # First candle has a red body
+        mask_first_red = (self.data["Open"].shift(2) > self.data["Price"].shift(2))
+        # First and third candles have long bodies (body greater than the 50th percentile)
+        mask_first_long = (self.data["Body"].shift(2) >= self.data["50 Body"])
+        mask_third_long = (self.data["Body"] >= self.data["50 Body"])
+        # Second candle has a short body (less than the 25th percentile)
+        mask_second_short = (self.data["Body"].shift(1) <= self.data["25 Body"])
+
+        mask = mask_third_green & mask_first_red & mask_first_long & mask_third_long & mask_second_short
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No morning star pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Morning star pattern detected at:")
             print(filtered_data)
 
         return filtered_data
