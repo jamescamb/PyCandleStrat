@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Optional
 from data import read_local_file, check_bad_values, correct_dates
 from data import correct_changes, asym_rolling_min, expanding_quantiles
-from plotting import summary_plot, candlestick_plot
+from plotting import summary_plot, candlestick_plot, scatter_matrix_plot
 
 # List potential candlestick patterns
 patterns = ["hammer", "inv_hammer",
@@ -69,6 +69,9 @@ class Strategy:
         # Print candlestick plot
         print("Printing candelstick plot")
         candlestick_plot(self.country, self.data)
+        # Print scatter matrix plot
+        print("Printing scatter matrix plot")
+        scatter_matrix_plot(self.data)
     
     def analyse_pattern(self) -> None:
         """
