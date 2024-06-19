@@ -99,6 +99,9 @@ class Strategy:
         elif self.pattern == "bull_engulf":
             print("Searching for bullish engulfing pattern")
             self.bull_engulf()
+        elif self.pattern == "piercing":
+            print("Searching for piercing line pattern")
+            self.piercing()
         else:
             print("Error: Pattern not recognised")
 
@@ -183,9 +186,43 @@ class Strategy:
         filtered_data = self.data.loc[mask]
 
         if filtered_data.empty:
-            print("No inverse hammer pattern detected from", self.start_date, "to", self.end_date)
+            print("No bullish engulfing pattern detected from", self.start_date, "to", self.end_date)
         else:
-            print("Inverse hammer patterns detected at:")
+            print("Bullish engulfing pattern detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def piercing(self) -> pd.DataFrame:
+        """
+        The piercing line is also a two-stick pattern,
+        made up of a long red candle, followed by a long green candle.
+        
+        There is usually a significant gap down between the first candlestick's closing price,
+        and the green candlestick's opening.
+        It indicates a strong buying pressure,
+        as the price is pushed up to or above the mid-price of the previous day.
+        """
+
+        # Second candle has a green body
+        mask_second_red = (self.data["Price"] > self.data["Open"])
+        # First candle has a red body
+        mask_first_green = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
+        # Both candles have long bodies (body greater than the 50th percentile)
+        mask_first_long = (self.data["Body"].shift(1) >= self.data["50 Body"].shift(1))
+        mask_second_long = (self.data["Body"] >= self.data["50 Body"])
+        # Significant gap down between first candle price and second candle opening
+        mask_gap_down = (self.data["Price"].shift(1) - self.data["Open"] >= self.data["25 Body"])
+        # Price on second bar must be must be more than halfway up the body of the first bar
+        mask_body = (self.data["Price"] >= self.data["Price"].shift(1) + self.data["Body"].shift(1)/2)
+
+        mask = mask_second_red & mask_first_green & mask_first_long & mask_second_long & mask_gap_down & mask_body
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No piercing line pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Piercint line patterns detected at:")
             print(filtered_data)
 
         return filtered_data
