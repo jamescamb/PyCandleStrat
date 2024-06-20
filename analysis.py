@@ -115,6 +115,9 @@ class Strategy:
         elif self.pattern == "hanging":
             print("Searching for bearish hanging man pattern")
             self.hanging()
+        elif self.pattern == "shooting":
+            print("Searching for bearish shooting star pattern")
+            self.shooting()
         else:
             print("Error: Pattern not recognised")
 
@@ -326,6 +329,36 @@ class Strategy:
             print("No hanging man pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Hanging man pattern detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def shooting(self) -> pd.DataFrame:
+        """
+        The shooting star is the same shape as the inverted hammer,
+        but is formed in an uptrend: it has a small lower body, and a long upper wick.
+        
+        Usually, the market will gap slightly higher on opening,
+        and rally to an intra-day high before closing at a price just above the open,
+        like a star falling to the ground.
+        """
+
+        # Lower wick <= 25% of body
+        mask_short_wick = (0.25*self.data["Body"] >= self.data["L-Wick"])
+        # Upper wick >= 150% of body
+        mask_long_wick = (1.5*self.data["Body"] <= self.data["U-Wick"])
+        # Local maximum
+        mask_maximum = (self.data["Max"] == True)
+        # Candle has a red body
+        mask_green = (self.data["Open"] > self.data["Price"])
+
+        mask = mask_short_wick & mask_long_wick & mask_maximum & mask_green
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No shooting star pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Shooting star patterns detected at:")
             print(filtered_data)
 
         return filtered_data
