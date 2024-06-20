@@ -71,5 +71,5 @@ def scatter_matrix_plot(data: pd.DataFrame) -> None:
     Plot a scatter matrix to show correlations between variables
     """
 
-    pd.plotting.scatter_matrix(data, figsize=(10,10), marker = '0', hist_kwds = {'bins': 10}, s = 30, alpha = 0.8)
+    pd.plotting.scatter_matrix(data, figsize=(8, 8), marker = '0', hist_kwds = {'bins': 10}, s = 30, alpha = 0.8)
     plt.show()

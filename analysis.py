@@ -7,7 +7,7 @@ import pandas as pd
 
 from typing import Optional
 from data import read_local_file, check_bad_values, correct_dates
-from data import correct_changes, asym_rolling_min, expanding_quantiles
+from data import correct_changes, asym_rolling_minmax, expanding_quantiles
 from plotting import summary_plot, candlestick_plot, scatter_matrix_plot
 
 # List potential candlestick patterns
@@ -91,7 +91,8 @@ class Strategy:
         #self.data["Min"] = (self.data["Price"] == self.data["Price"].rolling(window=window_size, center=True).min())
         # We can only detect a local minimum look_forward days after it has happened
         look_back, look_forward = 3, 1
-        self.data["Min"] = (self.data["Price"] == asym_rolling_min(self.data, look_back, look_forward))
+        self.data["Min"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, True))
+        self.data["Max"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, False))
 
         if self.pattern == "hammer":
             print("Searching for bullish hammer pattern")
@@ -103,14 +104,17 @@ class Strategy:
             print("Searching for bullish engulfing pattern")
             self.bull_engulf()
         elif self.pattern == "piercing":
-            print("Searching for piercing line pattern")
+            print("Searching for bullish piercing line pattern")
             self.piercing()
         elif self.pattern == "morning":
-            print("Searching for morning star pattern")
+            print("Searching for bullish morning star pattern")
             self.morning()
         elif self.pattern == "soldiers":
-            print("Searching for three white soldier pattern")
+            print("Searching for bullish three white soldier pattern")
             self.soldiers()
+        elif self.pattern == "hanging":
+            print("Searching for bearish hanging man pattern")
+            self.hanging()
         else:
             print("Error: Pattern not recognised")
 
@@ -294,6 +298,34 @@ class Strategy:
             print("No three white soldier pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Three white soldier pattern detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def hanging(self) -> pd.DataFrame:
+        """
+        The hanging man is the bearish equivalent of a hammer;
+        it has the same shape but forms at the end of an uptrend.
+        
+        It indicates that there was a significant sell-off during the day,
+        but that buyers were able to push the price up again.
+        The large sell-off is often seen as an indication that the bulls are losing control of the market.
+        """
+
+        # Lower wick >= 150% of body
+        mask_long_wick = (1.5*self.data["Body"] <= self.data["L-Wick"])
+        # Body within the 25th percentile
+        mask_short_body = (self.data["Body"] <= self.data["25 Body"])
+        # Local maximum
+        mask_maximum = (self.data["Max"] == True)
+
+        mask = mask_long_wick & mask_short_body & mask_maximum
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No hanging man pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Hanging man pattern detected at:")
             print(filtered_data)
 
         return filtered_data
