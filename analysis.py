@@ -124,6 +124,12 @@ class Strategy:
         elif self.pattern == "evening":
             print("Searching for bearish evening star pattern")
             self.evening()
+        elif self.pattern == "crows":
+            print("Searching for bearish three black crows pattern")
+            self.crows()
+        elif self.pattern == "cloud":
+            print("Searching for bearish dark cloud cover pattern")
+            self.cloud()
         else:
             print("Error: Pattern not recognised")
 
@@ -427,6 +433,67 @@ class Strategy:
             print("No evening star pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Evening star pattern detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def crows(self) -> pd.DataFrame:
+        """
+        The three black crows candlestick pattern comprises of three consecutive long red candles with short or non-existent wicks.
+        Each session opens at a similar price to the previous day,
+        but selling pressures push the price lower and lower with each close.
+        
+        Traders interpret this pattern as the start of a bearish downtrend,
+        as the sellers have overtaken the buyers during three successive trading days.
+        """
+
+        # All three candles have a red body
+        mask_first_red = (self.data["Open"].shift(2) > self.data["Price"].shift(2))
+        mask_second_red = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
+        mask_third_red = (self.data["Open"] > self.data["Price"])
+        # All three with very small wicks
+        mask_first_wicks = (0.2*self.data["Body"].shift(2) >= self.data["L-Wick"].shift(2)) & (0.2*self.data["Body"].shift(2) >= self.data["U-Wick"].shift(2))
+        mask_second_wicks = (0.2*self.data["Body"].shift(1) >= self.data["L-Wick"].shift(1)) & (0.2*self.data["Body"].shift(1) >= self.data["U-Wick"].shift(1))
+        mask_third_wicks = (0.2*self.data["Body"] >= self.data["L-Wick"]) & (0.2*self.data["Body"] >= self.data["U-Wick"])
+
+        mask = mask_first_red & mask_second_red & mask_third_red & mask_first_wicks & mask_second_wicks & mask_third_wicks
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No three black crows pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Three black crows pattern detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def cloud(self) -> pd.DataFrame:
+        """
+        The dark cloud cover candlestick pattern indicates a bearish reversal,
+        a black cloud over the previous day's optimism.
+        It comprises two candlesticks:
+        a red candlestick which opens above the previous green body, and closes below its midpoint.
+        
+        It signals that the bears have taken over the session, pushing the price sharply lower.
+        If the wicks of the candles are short it suggests that the downtrend was extremely decisive.
+        """
+
+        # First candle has a green body
+        mask_first_green = (self.data["Price"].shift(1) > self.data["Open"].shift(1))
+        # Second candle has a red body
+        mask_second_red = (self.data["Open"] > self.data["Price"])
+        # Red candle opens above the previous green body
+        mask_red_open = (self.data["Open"] > self.data["Price"].shift(1))
+        # Red candle closes below the midpoint of the green body
+        mask_red_close = (self.data["Price"] < self.data["Open"].shift(1) + self.data["Body"].shift(1)/2)
+
+        mask = mask_first_green & mask_second_red & mask_red_open & mask_red_close
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No dark cloud cover pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Dark cloud cover pattern detected at:")
             print(filtered_data)
 
         return filtered_data

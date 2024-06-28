@@ -7,7 +7,7 @@ MIT License 2024
 from analysis import Strategy
 
 country = "US"
-pattern = "evening"
+pattern = "cloud"
 start_date = "2024-01-01"
 
 strat = Strategy(country, pattern, start_date)
