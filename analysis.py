@@ -118,6 +118,9 @@ class Strategy:
         elif self.pattern == "shooting":
             print("Searching for bearish shooting star pattern")
             self.shooting()
+        elif self.pattern == "bear_engulf":
+            print("Searching for bearish engulfing pattern")
+            self.bear_engulf()
         else:
             print("Error: Pattern not recognised")
 
@@ -221,9 +224,9 @@ class Strategy:
         """
 
         # Second candle has a green body
-        mask_second_red = (self.data["Price"] > self.data["Open"])
+        mask_second_green = (self.data["Price"] > self.data["Open"])
         # First candle has a red body
-        mask_first_green = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
+        mask_first_red = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
         # Both candles have long bodies (body greater than the 50th percentile)
         mask_first_long = (self.data["Body"].shift(1) >= self.data["50 Body"])
         mask_second_long = (self.data["Body"] >= self.data["50 Body"])
@@ -232,7 +235,7 @@ class Strategy:
         # Price on second bar must be must be more than halfway up the body of the first bar
         mask_body = (self.data["Price"] >= self.data["Price"].shift(1) + self.data["Body"].shift(1)/2)
 
-        mask = mask_second_red & mask_first_green & mask_first_long & mask_second_long & mask_gap_down & mask_body
+        mask = mask_first_red & mask_second_green & mask_first_long & mask_second_long & mask_gap_down & mask_body
         filtered_data = self.data.loc[mask]
 
         if filtered_data.empty:
@@ -359,6 +362,38 @@ class Strategy:
             print("No shooting star pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Shooting star patterns detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def bear_engulf(self) -> pd.DataFrame:
+        """
+        A bearish engulfing pattern occurs at the end of an uptrend.
+        The first candle has a small green body that is engulfed by a subsequent long red candle.
+        
+        It signifies a peak or slowdown of price movement,
+        and is a sign of an impending market downturn.
+        The lower the second candle goes,
+        the more significant the trend is likely to be.
+        """
+
+        # Second candle has a red body
+        mask_second_red = (self.data["Price"] < self.data["Open"])
+        # First candle has a green body
+        mask_first_green = (self.data["Price"].shift(1) > self.data["Open"].shift(1))
+        # First and second candles have short and long bodies (less than or greater than the 50th percentile)
+        mask_first_short = (self.data["Body"].shift(1) <= self.data["50 Body"])
+        mask_second_long = (self.data["Body"] >= self.data["50 Body"])
+        # First candle is engulfed by the second candle
+        mask_engulf = (self.data["Low"] < self.data["Low"].shift(1)) & (self.data["High"] > self.data["High"].shift(1))
+
+        mask = mask_first_green & mask_second_red & mask_first_short & mask_second_long & mask_engulf
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No bearish engulfing pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Bearish engulfing patterns detected at:")
             print(filtered_data)
 
         return filtered_data
