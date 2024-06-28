@@ -121,6 +121,9 @@ class Strategy:
         elif self.pattern == "bear_engulf":
             print("Searching for bearish engulfing pattern")
             self.bear_engulf()
+        elif self.pattern == "evening":
+            print("Searching for bearish evening star pattern")
+            self.evening()
         else:
             print("Error: Pattern not recognised")
 
@@ -394,6 +397,36 @@ class Strategy:
             print("No bearish engulfing pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Bearish engulfing patterns detected at:")
+            print(filtered_data)
+
+        return filtered_data
+    
+    def evening(self) -> pd.DataFrame:
+        """
+        The evening star is a three-candlestick pattern that is the equivalent of the bullish morning star.
+        It is formed of a short candle sandwiched between a long green candle and a large red candlestick.
+        
+        It indicates the reversal of an uptrend,
+        and is particularly strong when the third candlestick erases the gains of the first candle.
+        """
+
+        # Third candle has a red body
+        mask_third_red = (self.data["Open"] > self.data["Price"])
+        # First candle has a green body
+        mask_first_green = (self.data["Price"].shift(2) > self.data["Open"].shift(2))
+        # First and third candles have long bodies (body greater than the 50th percentile)
+        mask_first_long = (self.data["Body"].shift(2) >= self.data["50 Body"])
+        mask_third_long = (self.data["Body"] >= self.data["50 Body"])
+        # Second candle has a short body (less than the 25th percentile)
+        mask_second_short = (self.data["Body"].shift(1) <= self.data["25 Body"])
+
+        mask = mask_first_green & mask_third_red & mask_first_long & mask_third_long & mask_second_short
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No evening star pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Evening star pattern detected at:")
             print(filtered_data)
 
         return filtered_data
