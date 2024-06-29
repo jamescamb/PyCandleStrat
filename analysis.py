@@ -85,7 +85,7 @@ class Strategy:
         # Calculate the upper wick length
         self.data["U-Wick"] = self.data["High"] - self.data[["Open", "Price"]].max(axis=1)
         # Calculate quantile data of body length
-        self.data = expanding_quantiles(self.data, "Body", [0.25, 0.50])
+        self.data = expanding_quantiles(self.data, "Body", [0.05, 0.25, 0.50])
         # Calculate local minimum over (asymmetrical) window size
         #window_size = 7
         #self.data["Min"] = (self.data["Price"] == self.data["Price"].rolling(window=window_size, center=True).min())
@@ -130,6 +130,9 @@ class Strategy:
         elif self.pattern == "cloud":
             print("Searching for bearish dark cloud cover pattern")
             self.cloud()
+        elif self.pattern == "doji":
+            print("Searching for continuation doji pattern")
+            self.doji()
         else:
             print("Error: Pattern not recognised")
 
@@ -496,4 +499,27 @@ class Strategy:
             print("Dark cloud cover pattern detected at:")
             print(filtered_data)
 
+        return filtered_data
+    
+    def doji(self) -> pd.DataFrame:
+        """
+        When a market's open and close are almost at the same price point,
+        the candlestick resembles a cross or plus sign,
+        and traders should look out for a short to non-existent body, with wicks of varying length.
+        
+        This doji's pattern conveys a struggle between buyers and sellers that results in no net gain for either side.
+        Alone a doji is neutral signal,
+        but it can be found in reversal patterns such as the bullish morning star and bearish evening star.
+        """
+
+        mask_body = (self.data["Body"] < self.data["5 Body"])
+
+        filtered_data = self.data.loc[mask_body]
+
+        if filtered_data.empty:
+            print("No doji pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Doji pattern detected at:")
+            print(filtered_data)
+        
         return filtered_data
