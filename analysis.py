@@ -133,6 +133,9 @@ class Strategy:
         elif self.pattern == "doji":
             print("Searching for continuation doji pattern")
             self.doji()
+        elif self.pattern == "spinning":
+            print("Searching for continuation spinning top pattern")
+            self.spinning()
         else:
             print("Error: Pattern not recognised")
 
@@ -512,14 +515,48 @@ class Strategy:
         but it can be found in reversal patterns such as the bullish morning star and bearish evening star.
         """
 
-        mask_body = (self.data["Body"] < self.data["5 Body"])
+        # Very small bodies
+        mask_first_body = (self.data["Body"].shift(1) < self.data["5 Body"].shift(1))
+        mask_second_body = (self.data["Body"] < self.data["5 Body"])
 
-        filtered_data = self.data.loc[mask_body]
+        mask = mask_first_body & mask_second_body
+        filtered_data = self.data.loc[mask]
 
         if filtered_data.empty:
             print("No doji pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Doji pattern detected at:")
+            print(filtered_data)
+        
+        return filtered_data
+    
+    def spinning(self) -> pd.DataFrame:
+        """
+        The spinning top candlestick pattern has a short body centered between wicks of equal length.
+        The pattern indicates indecision in the market,
+        resulting in no meaningful change in price:
+        the bulls sent the price higher, while the bears pushed it low again.
+        Spinning tops are often interpreted as a period of consolidation, or rest,
+        following a significant uptrend or downtrend.
+        
+        On its own the spinning top is a relatively benign signal,
+        but they can be interpreted as a sign of things to come as it signifies that the current market pressure is losing control.
+        """
+
+        # Short bodies
+        mask_first_body = (self.data["Body"].shift(1) < self.data["25 Body"].shift(1))
+        mask_second_body = (self.data["Body"] < self.data["25 Body"])
+        # Wicks with approximately equal length (less than 20% difference)
+        mask_first_wick = (abs(self.data["U-Wick"].shift(1) - self.data["L-Wick"].shift(1)) < 0.2*self.data["U-Wick"].shift(1))
+        mask_second_wick = (abs(self.data["U-Wick"] - self.data["L-Wick"]) < 0.2*self.data["U-Wick"])
+
+        mask = mask_first_body & mask_second_body & mask_first_wick & mask_second_wick
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No spinning top pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Spinning top pattern detected at:")
             print(filtered_data)
         
         return filtered_data
