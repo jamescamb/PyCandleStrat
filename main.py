@@ -7,8 +7,8 @@ MIT License 2024
 from analysis import Strategy
 
 country = "US"
-pattern = "falling"
-start_date = "2022-01-01"
+pattern = "rising"
+start_date = "2024-01-01"
 
 strat = Strategy(country, pattern, start_date)
 #strat.print_data(10)

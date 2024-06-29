@@ -140,6 +140,9 @@ class Strategy:
         elif self.pattern == "falling":
             print("Searching for continuation falling three method pattern")
             self.falling()
+        elif self.pattern == "rising":
+            print("Searching for continuation rising three method pattern")
+            self.rising()
         else:
             print("Error: Pattern not recognised")
 
@@ -592,6 +595,34 @@ class Strategy:
             print("No falling three method pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Falling three method pattern detected at:")
+            print(filtered_data)
+        
+        return filtered_data
+    
+    def rising(self) -> pd.DataFrame:
+        """
+        The opposite is true for the bullish pattern, called the 'rising three methods' candlestick pattern.
+        It comprises of three short reds sandwiched within the range of two long greens.
+        The pattern shows traders that, despite some selling pressure, buyers are retaining control of the market.
+        """
+
+        # First and last bodies are green
+        mask_green = (self.data["Price"].shift(4) > self.data["Open"].shift(4)) & (self.data["Price"] > self.data["Open"])
+        # Three bodies in the middle are all red
+        mask_red = (self.data["Open"].shift(3) > self.data["Price"].shift(3)) & (self.data["Open"].shift(2) > self.data["Price"].shift(2)) & (self.data["Open"].shift(1) > self.data["Price"].shift(1))
+        # Red candles contained within the range of the green bodies
+        mask_contain_first = (np.minimum(self.data["Low"], self.data["Low"].shift(4)) < self.data["Low"].shift(3))
+        mask_contain_third = (np.maximum(self.data["High"], self.data["High"].shift(4)) > self.data["High"].shift(1))
+        # There is a rising trend
+        mask_falling = (self.data["Price"] > self.data["Price"].shift(4))
+
+        mask = mask_red & mask_green & mask_contain_first & mask_contain_third & mask_falling
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No rising three method pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Rising three method pattern detected at:")
             print(filtered_data)
         
         return filtered_data
