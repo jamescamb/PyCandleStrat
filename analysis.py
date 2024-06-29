@@ -4,6 +4,7 @@ Analysis of candelstick patterns
 
 # Import libraries
 import pandas as pd
+import numpy as np
 
 from typing import Optional
 from data import read_local_file, check_bad_values, correct_dates
@@ -136,6 +137,9 @@ class Strategy:
         elif self.pattern == "spinning":
             print("Searching for continuation spinning top pattern")
             self.spinning()
+        elif self.pattern == "falling":
+            print("Searching for continuation falling three method pattern")
+            self.falling()
         else:
             print("Error: Pattern not recognised")
 
@@ -557,6 +561,37 @@ class Strategy:
             print("No spinning top pattern detected from", self.start_date, "to", self.end_date)
         else:
             print("Spinning top pattern detected at:")
+            print(filtered_data)
+        
+        return filtered_data
+    
+    def falling(self) -> pd.DataFrame:
+        """
+        Three-method formation patterns are used to predict the continuation of a current trend, be it bearish or bullish.
+        
+        The bearish pattern is called the 'falling three methods'.
+        It is formed of a long red body, followed by three small green bodies, and another red body.
+        The green candles are all contained within the range of the bearish bodies.
+        It shows traders that the bulls do not have enough strength to reverse the trend.
+        """
+
+        # First and last bodies are red
+        mask_red = (self.data["Open"].shift(4) > self.data["Price"].shift(4)) & (self.data["Open"] > self.data["Price"])
+        # Three bodies in the middle are all green
+        mask_green = (self.data["Price"].shift(3) > self.data["Open"].shift(3)) & (self.data["Price"].shift(2) > self.data["Open"].shift(2)) & (self.data["Price"].shift(1) > self.data["Open"].shift(1))
+        # Green candles contained within the range of the red bodies
+        mask_contain_first = (np.minimum(self.data["Low"], self.data["Low"].shift(4)) < self.data["Low"].shift(3))
+        mask_contain_third = (np.maximum(self.data["High"], self.data["High"].shift(4)) > self.data["High"].shift(1))
+        # There is a falling trend
+        mask_falling = (self.data["Price"].shift(4) > self.data["Price"])
+
+        mask = mask_red & mask_green & mask_contain_first & mask_contain_third & mask_falling
+        filtered_data = self.data.loc[mask]
+
+        if filtered_data.empty:
+            print("No falling three method pattern detected from", self.start_date, "to", self.end_date)
+        else:
+            print("Falling three method pattern detected at:")
             print(filtered_data)
         
         return filtered_data
