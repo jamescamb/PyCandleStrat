@@ -94,8 +94,17 @@ class Strategy:
         look_back, look_forward = 3, 1
         self.data["Min"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, True))
         self.data["Max"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, False))
+        # Add column that describes the pattern
+        self.data["Pattern"] = ""
 
-        if self.pattern == "hammer":
+        if self.pattern == "all":
+            all = pd.concat([self.hammer(), self.inv_hammer(), self.bull_engulf(), self.piercing(),
+                             self.morning(), self.soldiers(), self.hanging(), self.shooting(),
+                             self.bear_engulf(), self.evening(), self.crows(), self.cloud(),
+                             self.doji(), self.spinning(), self.falling(), self.rising()])
+            all.sort_index(inplace=True)
+            print(all)
+        elif self.pattern == "hammer":
             print("Searching for bullish hammer pattern")
             self.hammer()
         elif self.pattern == "inv_hammer":
@@ -166,6 +175,7 @@ class Strategy:
         
         mask = mask_long_wick & mask_short_body & mask_minimum
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "hammer"
 
         if filtered_data.empty:
             print("No hammer pattern detected from", self.start_date, "to", self.end_date)
@@ -195,6 +205,7 @@ class Strategy:
 
         mask = mask_short_wick & mask_long_wick & mask_minimum
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "inv_hammer"
 
         if filtered_data.empty:
             print("No inverse hammer pattern detected from", self.start_date, "to", self.end_date)
@@ -225,6 +236,7 @@ class Strategy:
 
         mask = mask_second_red & mask_first_green & mask_first_short & mask_engulf
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "bull_engulf"
 
         if filtered_data.empty:
             print("No bullish engulfing pattern detected from", self.start_date, "to", self.end_date)
@@ -259,6 +271,7 @@ class Strategy:
 
         mask = mask_first_red & mask_second_green & mask_first_long & mask_second_long & mask_gap_down & mask_body
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "piercing"
 
         if filtered_data.empty:
             print("No piercing line pattern detected from", self.start_date, "to", self.end_date)
@@ -291,6 +304,7 @@ class Strategy:
 
         mask = mask_third_green & mask_first_red & mask_first_long & mask_third_long & mask_second_short
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "morning"
 
         if filtered_data.empty:
             print("No morning star pattern detected from", self.start_date, "to", self.end_date)
@@ -321,6 +335,7 @@ class Strategy:
 
         mask = mask_green & mask_lower_wicks & mask_upper_wicks & mask_close & mask_open
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "soldiers"
 
         if filtered_data.empty:
             print("No three white soldier pattern detected from", self.start_date, "to", self.end_date)
@@ -349,6 +364,7 @@ class Strategy:
 
         mask = mask_long_wick & mask_short_body & mask_maximum
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "hanging"
 
         if filtered_data.empty:
             print("No hanging man pattern detected from", self.start_date, "to", self.end_date)
@@ -379,6 +395,7 @@ class Strategy:
 
         mask = mask_short_wick & mask_long_wick & mask_maximum & mask_green
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "shooting"
 
         if filtered_data.empty:
             print("No shooting star pattern detected from", self.start_date, "to", self.end_date)
@@ -411,6 +428,7 @@ class Strategy:
 
         mask = mask_first_green & mask_second_red & mask_first_short & mask_second_long & mask_engulf
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "bear_engulf"
 
         if filtered_data.empty:
             print("No bearish engulfing pattern detected from", self.start_date, "to", self.end_date)
@@ -441,6 +459,7 @@ class Strategy:
 
         mask = mask_first_green & mask_third_red & mask_first_long & mask_third_long & mask_second_short
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "evening"
 
         if filtered_data.empty:
             print("No evening star pattern detected from", self.start_date, "to", self.end_date)
@@ -471,6 +490,7 @@ class Strategy:
 
         mask = mask_first_red & mask_second_red & mask_third_red & mask_first_wicks & mask_second_wicks & mask_third_wicks
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "crows"
 
         if filtered_data.empty:
             print("No three black crows pattern detected from", self.start_date, "to", self.end_date)
@@ -502,6 +522,7 @@ class Strategy:
 
         mask = mask_first_green & mask_second_red & mask_red_open & mask_red_close
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "cloud"
 
         if filtered_data.empty:
             print("No dark cloud cover pattern detected from", self.start_date, "to", self.end_date)
@@ -528,6 +549,7 @@ class Strategy:
 
         mask = mask_first_body & mask_second_body
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "doji"
 
         if filtered_data.empty:
             print("No doji pattern detected from", self.start_date, "to", self.end_date)
@@ -559,6 +581,7 @@ class Strategy:
 
         mask = mask_first_body & mask_second_body & mask_first_wick & mask_second_wick
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "spinning"
 
         if filtered_data.empty:
             print("No spinning top pattern detected from", self.start_date, "to", self.end_date)
@@ -590,6 +613,7 @@ class Strategy:
 
         mask = mask_red & mask_green & mask_contain_first & mask_contain_third & mask_falling
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "falling"
 
         if filtered_data.empty:
             print("No falling three method pattern detected from", self.start_date, "to", self.end_date)
@@ -618,6 +642,7 @@ class Strategy:
 
         mask = mask_red & mask_green & mask_contain_first & mask_contain_third & mask_falling
         filtered_data = self.data.loc[mask]
+        self.data.loc[mask, "Pattern"] = "rising"
 
         if filtered_data.empty:
             print("No rising three method pattern detected from", self.start_date, "to", self.end_date)
