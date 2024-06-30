@@ -21,9 +21,9 @@ patterns = ["hammer", "inv_hammer",
             "doji", "spinning",
             "falling", "rising"]
 
-class Strategy:
+class Identify:
     """
-    OOP strategy class
+    OOP identify class
     """
 
     def __init__(self,
@@ -74,7 +74,7 @@ class Strategy:
         print("Printing scatter matrix plot")
         scatter_matrix_plot(self.data)
     
-    def analyse_pattern(self) -> None:
+    def analyse_pattern(self) -> pd.DataFrame:
         """
         Calculate important derivative data
         """
@@ -155,6 +155,8 @@ class Strategy:
             self.rising()
         else:
             print("Error: Pattern not recognised")
+        
+        return self.data
 
     def hammer(self) -> pd.DataFrame:
         """

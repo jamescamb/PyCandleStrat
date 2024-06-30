@@ -4,16 +4,19 @@ PyCandleStrat
 MIT License 2024
 """
 
-from analysis import Strategy
+from analysis import Identify
+from trading import Strategy
 
 country = "US"
 pattern = "all"
 start_date = "2024-04-01"
 
-strat = Strategy(country, pattern, start_date)
-#strat.print_data(10)
-strat.initial_plot()
-strat.analyse_pattern()
+ident = Identify(country, pattern, start_date)
+#ident.print_data(10)
+ident.initial_plot()
+df = ident.analyse_pattern()
+strat = Strategy(df)
+returns = strat.naive_trader()
 
 # TODO:
 # Finish candlestick patterns
