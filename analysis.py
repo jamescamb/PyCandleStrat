@@ -94,8 +94,9 @@ class Strategy:
         look_back, look_forward = 3, 1
         self.data["Min"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, True))
         self.data["Max"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, False))
-        # Add column that describes the pattern
+        # Add columns that describe the patterns and trends
         self.data["Pattern"] = ""
+        self.data["Trend"] = ""
 
         if self.pattern == "all":
             all = pd.concat([self.hammer(), self.inv_hammer(), self.bull_engulf(), self.piercing(),
@@ -174,8 +175,9 @@ class Strategy:
         mask_minimum = (self.data["Min"] == True)
         
         mask = mask_long_wick & mask_short_body & mask_minimum
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "hammer"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "hammer"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
         if filtered_data.empty:
             print("No hammer pattern detected from", self.start_date, "to", self.end_date)
@@ -204,8 +206,9 @@ class Strategy:
         mask_minimum = (self.data["Min"] == True)
 
         mask = mask_short_wick & mask_long_wick & mask_minimum
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "inv_hammer"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "inv_hammer"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
         if filtered_data.empty:
             print("No inverse hammer pattern detected from", self.start_date, "to", self.end_date)
@@ -235,8 +238,9 @@ class Strategy:
         mask_engulf = (self.data["Open"] < self.data["Price"].shift(1)) & (self.data["Price"] > self.data["Open"].shift(1))
 
         mask = mask_second_red & mask_first_green & mask_first_short & mask_engulf
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "bull_engulf"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "bull_engulf"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
         if filtered_data.empty:
             print("No bullish engulfing pattern detected from", self.start_date, "to", self.end_date)
@@ -270,8 +274,9 @@ class Strategy:
         mask_body = (self.data["Price"] >= self.data["Price"].shift(1) + self.data["Body"].shift(1)/2)
 
         mask = mask_first_red & mask_second_green & mask_first_long & mask_second_long & mask_gap_down & mask_body
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "piercing"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "piercing"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
         if filtered_data.empty:
             print("No piercing line pattern detected from", self.start_date, "to", self.end_date)
@@ -303,8 +308,9 @@ class Strategy:
         mask_second_short = (self.data["Body"].shift(1) <= self.data["25 Body"])
 
         mask = mask_third_green & mask_first_red & mask_first_long & mask_third_long & mask_second_short
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "morning"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "morning"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
         if filtered_data.empty:
             print("No morning star pattern detected from", self.start_date, "to", self.end_date)
@@ -334,8 +340,9 @@ class Strategy:
         mask_open = (self.data["Open"] > self.data["Open"].shift(1)) & (self.data["Open"].shift(1) > self.data["Open"].shift(2))
 
         mask = mask_green & mask_lower_wicks & mask_upper_wicks & mask_close & mask_open
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "soldiers"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "soldiers"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
         if filtered_data.empty:
             print("No three white soldier pattern detected from", self.start_date, "to", self.end_date)
@@ -363,8 +370,9 @@ class Strategy:
         mask_maximum = (self.data["Max"] == True)
 
         mask = mask_long_wick & mask_short_body & mask_maximum
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "hanging"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "hanging"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
         if filtered_data.empty:
             print("No hanging man pattern detected from", self.start_date, "to", self.end_date)
@@ -394,8 +402,9 @@ class Strategy:
         mask_green = (self.data["Open"] > self.data["Price"])
 
         mask = mask_short_wick & mask_long_wick & mask_maximum & mask_green
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "shooting"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "shooting"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
         if filtered_data.empty:
             print("No shooting star pattern detected from", self.start_date, "to", self.end_date)
@@ -427,8 +436,9 @@ class Strategy:
         mask_engulf = (self.data["Low"] < self.data["Low"].shift(1)) & (self.data["High"] > self.data["High"].shift(1))
 
         mask = mask_first_green & mask_second_red & mask_first_short & mask_second_long & mask_engulf
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "bear_engulf"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "bear_engulf"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
         if filtered_data.empty:
             print("No bearish engulfing pattern detected from", self.start_date, "to", self.end_date)
@@ -458,8 +468,9 @@ class Strategy:
         mask_second_short = (self.data["Body"].shift(1) <= self.data["25 Body"])
 
         mask = mask_first_green & mask_third_red & mask_first_long & mask_third_long & mask_second_short
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "evening"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "evening"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
         if filtered_data.empty:
             print("No evening star pattern detected from", self.start_date, "to", self.end_date)
@@ -489,8 +500,9 @@ class Strategy:
         mask_third_wicks = (0.2*self.data["Body"] >= self.data["L-Wick"]) & (0.2*self.data["Body"] >= self.data["U-Wick"])
 
         mask = mask_first_red & mask_second_red & mask_third_red & mask_first_wicks & mask_second_wicks & mask_third_wicks
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "crows"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "crows"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
         if filtered_data.empty:
             print("No three black crows pattern detected from", self.start_date, "to", self.end_date)
@@ -521,8 +533,9 @@ class Strategy:
         mask_red_close = (self.data["Price"] < self.data["Open"].shift(1) + self.data["Body"].shift(1)/2)
 
         mask = mask_first_green & mask_second_red & mask_red_open & mask_red_close
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "cloud"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "cloud"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
         if filtered_data.empty:
             print("No dark cloud cover pattern detected from", self.start_date, "to", self.end_date)
@@ -548,8 +561,9 @@ class Strategy:
         mask_second_body = (self.data["Body"] < self.data["5 Body"])
 
         mask = mask_first_body & mask_second_body
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "doji"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "doji"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
 
         if filtered_data.empty:
             print("No doji pattern detected from", self.start_date, "to", self.end_date)
@@ -580,8 +594,9 @@ class Strategy:
         mask_second_wick = (abs(self.data["U-Wick"] - self.data["L-Wick"]) < 0.2*self.data["U-Wick"])
 
         mask = mask_first_body & mask_second_body & mask_first_wick & mask_second_wick
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "spinning"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "spinning"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
 
         if filtered_data.empty:
             print("No spinning top pattern detected from", self.start_date, "to", self.end_date)
@@ -612,8 +627,9 @@ class Strategy:
         mask_falling = (self.data["Price"].shift(4) > self.data["Price"])
 
         mask = mask_red & mask_green & mask_contain_first & mask_contain_third & mask_falling
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "falling"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "falling"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
 
         if filtered_data.empty:
             print("No falling three method pattern detected from", self.start_date, "to", self.end_date)
@@ -641,8 +657,9 @@ class Strategy:
         mask_falling = (self.data["Price"] > self.data["Price"].shift(4))
 
         mask = mask_red & mask_green & mask_contain_first & mask_contain_third & mask_falling
-        filtered_data = self.data.loc[mask]
-        self.data.loc[mask, "Pattern"] = "rising"
+        filtered_data = self.data.loc[mask].copy()
+        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "rising"
+        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
 
         if filtered_data.empty:
             print("No rising three method pattern detected from", self.start_date, "to", self.end_date)
