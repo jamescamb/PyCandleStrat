@@ -5,14 +5,19 @@ Trading government bonds
 # Import libraries
 import pandas as pd
 
+from data import resampled_data
+
 class Strategy:
     """
     OOP strategy class
     """
 
-    def __init__(self, data: pd.DataFrame) -> None:
+    def __init__(self,
+                 country: str,
+                 data: pd.DataFrame) -> None:
 
         self.data = data
+        self.country = country
         data["Action"] = "hold"
     
     def evaluate(self) -> float:
@@ -33,7 +38,6 @@ class Strategy:
         print("Holding trader gives {:.4f}% net increase on bond yield".format(funds))
 
         return funds
-
 
     def naive_trader(self) -> float:
         """

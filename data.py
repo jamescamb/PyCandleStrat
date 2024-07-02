@@ -3,10 +3,13 @@ Import and read data, and convert it to a Pandas dataframe
 """
 
 # Import libraries
+import numpy as np
 import pandas as pd
 from typing import Optional
 
-def read_local_file(filename: str):
+np.random.seed(0)
+
+def read_local_file(filename: str, confirm: Optional[bool] = True):
     """
     Read in a local CSV file and return a Panda dataframe
     """
@@ -19,8 +22,9 @@ def read_local_file(filename: str):
                                              "High": 'float',
                                              "Low": 'float',
                                              "Change %": 'string'})
-        print("Successfully read", filename, "into a Panda dataframe")
-        print("Bond yield data has", data.shape[0], "entries")
+        if confirm:
+            print("Successfully read", filename, "into a Panda dataframe")
+            print("Bond yield data has", data.shape[0], "entries")
         
         return data
     except:
@@ -133,3 +137,40 @@ def expanding_quantiles(data: pd.DataFrame,
     
     return new_data
 
+def resampled_data(country: str, copies: int) -> pd.DataFrame:
+    """
+    Monte Carlo inspired method for producing synthetic data over all OHLC values 
+    """
+
+    filename = country + "-bond-yield.csv"
+    df = read_local_file(filename, False)
+    if df is None:
+        raise Exception("Program closing.")
+    else:
+        check_bad_values(df)
+        correct_dates(df)
+        correct_changes(df)
+        df.sort_values(["Date"], ignore_index=True, inplace=True)
+    
+    df["DF"] = 0
+    dataframes = [df]
+
+    for i in range(copies):
+        new_df = df.copy()
+        for col in ["Open", "High", "Low"]:
+            new_df[col] = new_df[col] / new_df["Price"]
+        new_df["Price"] = new_df["Price"].pct_change()
+        new_df.loc[1:, "Price"] = np.random.permutation(new_df.loc[1:, "Price"].values)
+        new_df.loc[0, "Price"] = df.loc[0, "Price"]
+        for j in range(1, len(new_df)):
+            new_df.at[j, "Price"] = (1 + new_df.at[j, "Price"]) * new_df.at[j - 1, "Price"]
+        for col in ["Open", "High", "Low"]:
+            new_df[col] = new_df[col] * new_df["Price"]
+        new_df["Change %"] = 100 * new_df["Price"].pct_change()
+        new_df["Change %"] = new_df["Change %"].fillna(0)
+        new_df["DF"] = i + 1
+        dataframes.append(new_df)
+    
+    df_combined = pd.concat(dataframes)
+
+    return df_combined
