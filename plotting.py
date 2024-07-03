@@ -97,6 +97,35 @@ def multiple_candlestick(country: str,
     plt.xlabel("Trading Days")
     plt.show()
 
+def monte_carlo_paths(country: str,
+                      data: pd.DataFrame,
+                      start_date: Optional[str] = "2000-01-01",
+                      end_date: Optional[str] = "2025-01-01") -> None:
+    """
+    Plot the close price of the real data, plus all the MC generated ones
+    """
+
+    # Start and end dates need to be in form 'YYYY-MM-DD'
+    check_date(start_date)
+    check_date(end_date)
+    filtered_df = filter_data(data, start_date, end_date).copy()
+
+    for i in range(1, filtered_df["DF"].iloc[-1] + 1):
+        df = filtered_df[filtered_df["DF"] == i]
+        if i == 1:
+            plt.plot(df["Price"], color="blue", label="Monte Carlo")
+        else:
+            plt.plot(df["Price"], color="blue")
+    
+    df = filtered_df[filtered_df["DF"] == 0]
+    plt.plot(df["Price"], color="red", label="Realised")
+    
+    plt.title(country)
+    plt.ylabel("Yield [%]")
+    plt.xlabel("Trading Days")
+    plt.legend()
+    plt.show()
+
 def scatter_matrix_plot(data: pd.DataFrame) -> None:
     """
     Plot a scatter matrix to show correlations between variables
