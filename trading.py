@@ -3,9 +3,10 @@ Trading government bonds
 """
 
 # Import libraries
+import numpy as np
 import pandas as pd
 
-from data import resampled_data
+from typing import Optional
 
 class Strategy:
     """
@@ -14,9 +15,11 @@ class Strategy:
 
     def __init__(self,
                  country: str,
-                 data: pd.DataFrame) -> None:
+                 data: pd.DataFrame,
+                 mc_data: pd.DataFrame) -> None:
 
         self.data = data
+        self.mc_data = mc_data
         self.country = country
         data["Action"] = "hold"
     
@@ -25,21 +28,32 @@ class Strategy:
         Evaluate all trading strategies
         """
 
-        self.hold_trader()
-        self.naive_trader()
+        print("Out of Sample:")
+        self.hold_trader(self.data, True)
+        self.naive_trader(self.data, True)
+
+        print("In Sample")
+        returns = []
+        self.hold_trader(self.mc_data, True)
+        for i in range(1, self.mc_data["DF"].iloc[-1] + 1):
+            returns.append(self.naive_trader(self.mc_data[self.mc_data["DF"] == i]))
+        returns = np.array(returns)
+        mean, std = np.mean(returns), np.std(returns)
+        print("Naive candlestick trader gives on average {:.4f}% net increase on bond yield with {:.4f} standard deviation".format(mean, std))
     
-    def hold_trader(self) -> float:
+    def hold_trader(self, df: pd.DataFrame, statement: Optional[bool] = False) -> float:
         """
         Buy at the first instance and sell at the last instance
         """
 
-        funds = self.data["Price"].iloc[-1] - self.data["Price"].iloc[0]
+        funds = df["Price"].iloc[-1] - df["Price"].iloc[0]
 
-        print("Holding trader gives {:.4f}% net increase on bond yield".format(funds))
+        if statement:
+            print("Holding trader gives {:.4f}% net increase on bond yield".format(funds))
 
         return funds
 
-    def naive_trader(self) -> float:
+    def naive_trader(self, df: pd.DataFrame, statement: Optional[bool] = False) -> float:
         """
         Trade only on qualitative candlestick patterns
         """
@@ -47,21 +61,22 @@ class Strategy:
         funds = 0
         available = True
 
-        for i in self.data.index.tolist()[1:]:
-            if self.data.loc[i - 1, "Trend"] == "up" and available:
+        for i in df.index.tolist()[1:]:
+            if df.loc[i - 1, "Trend"] == "up" and available:
                 # Buy bond
-                funds -= self.data.loc[i, "Open"]
-                self.data.at[i, "Action"] = "buy"
+                funds -= df.loc[i, "Open"]
+                df.at[i, "Action"] = "buy"
                 available = False
-            elif self.data.loc[i - 1, "Trend"] == "down" and not available:
+            elif df.loc[i - 1, "Trend"] == "down" and not available:
                 # Sell bond
-                funds += self.data.loc[i, "Open"]
-                self.data.at[i, "Action"] = "sell"
+                funds += df.loc[i, "Open"]
+                df.at[i, "Action"] = "sell"
                 available = True
         
         if not available:
-            funds += self.data["Price"].iloc[-1]
+            funds += df["Price"].iloc[-1]
 
-        print("Naive candlestick trader gives {:.4f}% net increase on bond yield".format(funds))
+        if statement:
+            print("Naive candlestick trader gives {:.4f}% net increase on bond yield".format(funds))
         
         return funds

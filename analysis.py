@@ -9,7 +9,9 @@ import numpy as np
 from typing import Optional
 from data import read_local_file, check_bad_values, correct_dates
 from data import correct_changes, asym_rolling_minmax, expanding_quantiles
+from data import resampled_data
 from plotting import summary_plot, candlestick_plot, scatter_matrix_plot
+from plotting import multiple_candlestick, monte_carlo_paths
 
 # List potential candlestick patterns
 patterns = ["hammer", "inv_hammer",
@@ -670,3 +672,19 @@ class Identify:
             print(filtered_data)
         
         return filtered_data
+    
+    def monte_carlo(self,
+                    copies: int,
+                    plot: Optional[bool] = True) -> pd.DataFrame:
+        """
+        Get Monte Carlo data and plot it
+        """
+
+        all_data = resampled_data(self.country, copies)
+        self.mc_data = all_data
+
+        if plot:
+            multiple_candlestick(self.country, all_data, self.start_date)
+            monte_carlo_paths(self.country, all_data, self.start_date)
+        
+        return all_data
