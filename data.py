@@ -137,7 +137,7 @@ def expanding_quantiles(data: pd.DataFrame,
     
     return new_data
 
-def resampled_data(country: str, copies: int) -> pd.DataFrame:
+def resampled_data(country: str, copies: int, start_date: str, end_date: str) -> pd.DataFrame:
     """
     Monte Carlo inspired method for producing synthetic data over all OHLC values 
     """
@@ -172,5 +172,8 @@ def resampled_data(country: str, copies: int) -> pd.DataFrame:
         dataframes.append(new_df)
     
     df_combined = pd.concat(dataframes)
+
+    mask = (df_combined["Date"] >= start_date) & (df_combined["Date"] <= end_date)
+    df_combined = df_combined.loc[mask]
 
     return df_combined

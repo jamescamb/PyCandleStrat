@@ -6,7 +6,7 @@ Analysis of candelstick patterns
 import pandas as pd
 import numpy as np
 
-from typing import Optional
+from typing import Optional, Tuple
 from data import read_local_file, check_bad_values, correct_dates
 from data import correct_changes, asym_rolling_minmax, expanding_quantiles
 from data import resampled_data
@@ -101,66 +101,70 @@ class Identify:
         self.data["Trend"] = ""
 
         if self.pattern == "all":
-            all = pd.concat([self.hammer(), self.inv_hammer(), self.bull_engulf(), self.piercing(),
-                             self.morning(), self.soldiers(), self.hanging(), self.shooting(),
-                             self.bear_engulf(), self.evening(), self.crows(), self.cloud(),
-                             self.doji(), self.spinning(), self.falling(), self.rising()])
+            all = pd.concat([self.hammer(self.data, True), self.inv_hammer(self.data, True),
+                             self.bull_engulf(self.data, True), self.piercing(self.data, True),
+                             self.morning(self.data, True), self.soldiers(self.data, True),
+                             self.hanging(self.data, True), self.shooting(self.data, True),
+                             self.bear_engulf(self.data, True), self.evening(self.data, True),
+                             self.crows(self.data, True), self.cloud(self.data, True),
+                             self.doji(self.data, True), self.spinning(self.data, True),
+                             self.falling(self.data, True), self.rising(self.data, True)])
             all.sort_index(inplace=True)
             print(all)
         elif self.pattern == "hammer":
             print("Searching for bullish hammer pattern")
-            self.hammer()
+            self.hammer(self.data)
         elif self.pattern == "inv_hammer":
             print("Searching for bullish inverse hammer pattern")
-            self.inv_hammer()
+            self.inv_hammer(self.data)
         elif self.pattern == "bull_engulf":
             print("Searching for bullish engulfing pattern")
-            self.bull_engulf()
+            self.bull_engulf(self.data)
         elif self.pattern == "piercing":
             print("Searching for bullish piercing line pattern")
-            self.piercing()
+            self.piercing(self.data)
         elif self.pattern == "morning":
             print("Searching for bullish morning star pattern")
-            self.morning()
+            self.morning(self.data)
         elif self.pattern == "soldiers":
             print("Searching for bullish three white soldier pattern")
-            self.soldiers()
+            self.soldiers(self.data)
         elif self.pattern == "hanging":
             print("Searching for bearish hanging man pattern")
-            self.hanging()
+            self.hanging(self.data)
         elif self.pattern == "shooting":
             print("Searching for bearish shooting star pattern")
-            self.shooting()
+            self.shooting(self.data)
         elif self.pattern == "bear_engulf":
             print("Searching for bearish engulfing pattern")
-            self.bear_engulf()
+            self.bear_engulf(self.data)
         elif self.pattern == "evening":
             print("Searching for bearish evening star pattern")
-            self.evening()
+            self.evening(self.data)
         elif self.pattern == "crows":
             print("Searching for bearish three black crows pattern")
-            self.crows()
+            self.crows(self.data)
         elif self.pattern == "cloud":
             print("Searching for bearish dark cloud cover pattern")
-            self.cloud()
+            self.cloud(self.data)
         elif self.pattern == "doji":
             print("Searching for continuation doji pattern")
-            self.doji()
+            self.doji(self.data)
         elif self.pattern == "spinning":
             print("Searching for continuation spinning top pattern")
-            self.spinning()
+            self.spinning(self.data)
         elif self.pattern == "falling":
             print("Searching for continuation falling three method pattern")
-            self.falling()
+            self.falling(self.data)
         elif self.pattern == "rising":
             print("Searching for continuation rising three method pattern")
-            self.rising()
+            self.rising(self.data)
         else:
             print("Error: Pattern not recognised")
         
         return self.data
 
-    def hammer(self) -> pd.DataFrame:
+    def hammer(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The hammer candlestick pattern is formed of a short body with a long lower wick,
         and is found at the bottom of a downward trend.
@@ -172,26 +176,27 @@ class Identify:
         """
 
         # Lower wick >= 150% of body
-        mask_long_wick = (1.5*self.data["Body"] <= self.data["L-Wick"])
+        mask_long_wick = (1.5*df["Body"] <= df["L-Wick"])
         # Body within the 25th percentile
-        mask_short_body = (self.data["Body"] <= self.data["25 Body"])
+        mask_short_body = (df["Body"] <= df["25 Body"])
         # Local minimum
-        mask_minimum = (self.data["Min"] == True)
+        mask_minimum = (df["Min"] == True)
         
         mask = mask_long_wick & mask_short_body & mask_minimum
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "hammer"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "hammer"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
-        if filtered_data.empty:
-            print("No hammer pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Hammer patterns detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No hammer pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Hammer patterns detected at:")
+                print(filtered_data)
         
         return filtered_data
 
-    def inv_hammer(self) -> pd.DataFrame:
+    def inv_hammer(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         A similarly bullish pattern is the inverted hammer.
         The only difference being that the upper wick is long,
@@ -203,26 +208,27 @@ class Identify:
         """
 
         # Lower wick <= 25% of body
-        mask_short_wick = (0.25*self.data["Body"] >= self.data["L-Wick"])
+        mask_short_wick = (0.25*df["Body"] >= df["L-Wick"])
         # Upper wick >= 150% of body
-        mask_long_wick = (1.5*self.data["Body"] <= self.data["U-Wick"])
+        mask_long_wick = (1.5*df["Body"] <= df["U-Wick"])
         # Local minimum
-        mask_minimum = (self.data["Min"] == True)
+        mask_minimum = (df["Min"] == True)
 
         mask = mask_short_wick & mask_long_wick & mask_minimum
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "inv_hammer"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "inv_hammer"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
-        if filtered_data.empty:
-            print("No inverse hammer pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Inverse hammer patterns detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No inverse hammer pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Inverse hammer patterns detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def bull_engulf(self) -> pd.DataFrame:
+    def bull_engulf(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The bullish engulfing pattern is formed of two candlesticks.
         The first candle is a short red body that is completely engulfed by a larger green candle.
@@ -233,28 +239,29 @@ class Identify:
         """
 
         # Second candle has a green body
-        mask_second_red = (self.data["Price"] > self.data["Open"])
+        mask_second_red = (df["Price"] > df["Open"])
         # First candle has a red body
-        mask_first_green = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
+        mask_first_green = (df["Open"].shift(1) > df["Price"].shift(1))
         # First candle has a short body (body within the 50th percentile)
-        mask_first_short = (self.data["Body"].shift(1) <= self.data["50 Body"])
+        mask_first_short = (df["Body"].shift(1) <= df["50 Body"])
         # First candle is engulfed by the second candle
-        mask_engulf = (self.data["Open"] < self.data["Price"].shift(1)) & (self.data["Price"] > self.data["Open"].shift(1))
+        mask_engulf = (df["Open"] < df["Price"].shift(1)) & (df["Price"] > df["Open"].shift(1))
 
         mask = mask_second_red & mask_first_green & mask_first_short & mask_engulf
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "bull_engulf"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "bull_engulf"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
-        if filtered_data.empty:
-            print("No bullish engulfing pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Bullish engulfing pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No bullish engulfing pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Bullish engulfing pattern detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def piercing(self) -> pd.DataFrame:
+    def piercing(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The piercing line is also a two-stick pattern,
         made up of a long red candle, followed by a long green candle.
@@ -266,31 +273,32 @@ class Identify:
         """
 
         # Second candle has a green body
-        mask_second_green = (self.data["Price"] > self.data["Open"])
+        mask_second_green = (df["Price"] > df["Open"])
         # First candle has a red body
-        mask_first_red = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
+        mask_first_red = (df["Open"].shift(1) > df["Price"].shift(1))
         # Both candles have long bodies (body greater than the 50th percentile)
-        mask_first_long = (self.data["Body"].shift(1) >= self.data["50 Body"])
-        mask_second_long = (self.data["Body"] >= self.data["50 Body"])
+        mask_first_long = (df["Body"].shift(1) >= df["50 Body"])
+        mask_second_long = (df["Body"] >= df["50 Body"])
         # Significant gap down between first candle price and second candle opening
-        mask_gap_down = (self.data["Price"].shift(1) - self.data["Open"] >= self.data["25 Body"])
+        mask_gap_down = (df["Price"].shift(1) - df["Open"] >= df["25 Body"])
         # Price on second bar must be must be more than halfway up the body of the first bar
-        mask_body = (self.data["Price"] >= self.data["Price"].shift(1) + self.data["Body"].shift(1)/2)
+        mask_body = (df["Price"] >= df["Price"].shift(1) + df["Body"].shift(1)/2)
 
         mask = mask_first_red & mask_second_green & mask_first_long & mask_second_long & mask_gap_down & mask_body
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "piercing"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "piercing"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
-        if filtered_data.empty:
-            print("No piercing line pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Piercing line patterns detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No piercing line pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Piercing line patterns detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def morning(self) -> pd.DataFrame:
+    def morning(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The morning star candlestick pattern is considered a sign of hope in a bleak market downtrend.
         It is a three-stick pattern: one short-bodied candle between a long red and a long green.
@@ -302,29 +310,30 @@ class Identify:
         """
 
         # Third candle has a green body
-        mask_third_green = (self.data["Price"] > self.data["Open"])
+        mask_third_green = (df["Price"] > df["Open"])
         # First candle has a red body
-        mask_first_red = (self.data["Open"].shift(2) > self.data["Price"].shift(2))
+        mask_first_red = (df["Open"].shift(2) > df["Price"].shift(2))
         # First and third candles have long bodies (body greater than the 50th percentile)
-        mask_first_long = (self.data["Body"].shift(2) >= self.data["50 Body"])
-        mask_third_long = (self.data["Body"] >= self.data["50 Body"])
+        mask_first_long = (df["Body"].shift(2) >= df["50 Body"])
+        mask_third_long = (df["Body"] >= df["50 Body"])
         # Second candle has a short body (less than the 25th percentile)
-        mask_second_short = (self.data["Body"].shift(1) <= self.data["25 Body"])
+        mask_second_short = (df["Body"].shift(1) <= df["25 Body"])
 
         mask = mask_third_green & mask_first_red & mask_first_long & mask_third_long & mask_second_short
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "morning"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "morning"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
-        if filtered_data.empty:
-            print("No morning star pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Morning star pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No morning star pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Morning star pattern detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def soldiers(self) -> pd.DataFrame:
+    def soldiers(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The three white soldiers pattern occurs over three days.
         It consists of consecutive long green (or white) candles with small wicks,
@@ -335,28 +344,29 @@ class Identify:
         """
 
         # All three bodies are green
-        mask_green = (self.data["Price"] > self.data["Open"]) & (self.data["Price"].shift(1) > self.data["Open"].shift(1)) & (self.data["Price"].shift(2) > self.data["Open"].shift(2))
+        mask_green = (df["Price"] > df["Open"]) & (df["Price"].shift(1) > df["Open"].shift(1)) & (df["Price"].shift(2) > df["Open"].shift(2))
         # All three candles have small wicks (less than 25% of the body)
-        mask_upper_wicks = (0.25*self.data["Body"] >= self.data["U-Wick"]) & (0.25*self.data["Body"].shift(1) >= self.data["U-Wick"].shift(1)) & (0.25*self.data["Body"].shift(2) >= self.data["U-Wick"].shift(2))
-        mask_lower_wicks = (0.25*self.data["Body"] >= self.data["L-Wick"]) & (0.25*self.data["Body"].shift(1) >= self.data["L-Wick"].shift(1)) & (0.25*self.data["Body"].shift(2) >= self.data["L-Wick"].shift(2))
+        mask_upper_wicks = (0.25*df["Body"] >= df["U-Wick"]) & (0.25*df["Body"].shift(1) >= df["U-Wick"].shift(1)) & (0.25*df["Body"].shift(2) >= df["U-Wick"].shift(2))
+        mask_lower_wicks = (0.25*df["Body"] >= df["L-Wick"]) & (0.25*df["Body"].shift(1) >= df["L-Wick"].shift(1)) & (0.25*df["Body"].shift(2) >= df["L-Wick"].shift(2))
         # Successive candles open and close progressively higher
-        mask_close = (self.data["Price"] > self.data["Price"].shift(1)) & (self.data["Price"].shift(1) > self.data["Price"].shift(2))
-        mask_open = (self.data["Open"] > self.data["Open"].shift(1)) & (self.data["Open"].shift(1) > self.data["Open"].shift(2))
+        mask_close = (df["Price"] > df["Price"].shift(1)) & (df["Price"].shift(1) > df["Price"].shift(2))
+        mask_open = (df["Open"] > df["Open"].shift(1)) & (df["Open"].shift(1) > df["Open"].shift(2))
 
         mask = mask_green & mask_lower_wicks & mask_upper_wicks & mask_close & mask_open
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "soldiers"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "soldiers"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "up"
 
-        if filtered_data.empty:
-            print("No three white soldier pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Three white soldier pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No three white soldier pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Three white soldier pattern detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def hanging(self) -> pd.DataFrame:
+    def hanging(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The hanging man is the bearish equivalent of a hammer;
         it has the same shape but forms at the end of an uptrend.
@@ -367,26 +377,27 @@ class Identify:
         """
 
         # Lower wick >= 150% of body
-        mask_long_wick = (1.5*self.data["Body"] <= self.data["L-Wick"])
+        mask_long_wick = (1.5*df["Body"] <= df["L-Wick"])
         # Body within the 25th percentile
-        mask_short_body = (self.data["Body"] <= self.data["25 Body"])
+        mask_short_body = (df["Body"] <= df["25 Body"])
         # Local maximum
-        mask_maximum = (self.data["Max"] == True)
+        mask_maximum = (df["Max"] == True)
 
         mask = mask_long_wick & mask_short_body & mask_maximum
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "hanging"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "hanging"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
-        if filtered_data.empty:
-            print("No hanging man pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Hanging man pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No hanging man pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Hanging man pattern detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def shooting(self) -> pd.DataFrame:
+    def shooting(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The shooting star is the same shape as the inverted hammer,
         but is formed in an uptrend: it has a small lower body, and a long upper wick.
@@ -397,28 +408,29 @@ class Identify:
         """
 
         # Lower wick <= 25% of body
-        mask_short_wick = (0.25*self.data["Body"] >= self.data["L-Wick"])
+        mask_short_wick = (0.25*df["Body"] >= df["L-Wick"])
         # Upper wick >= 150% of body
-        mask_long_wick = (1.5*self.data["Body"] <= self.data["U-Wick"])
+        mask_long_wick = (1.5*df["Body"] <= df["U-Wick"])
         # Local maximum
-        mask_maximum = (self.data["Max"] == True)
+        mask_maximum = (df["Max"] == True)
         # Candle has a red body
-        mask_green = (self.data["Open"] > self.data["Price"])
+        mask_green = (df["Open"] > df["Price"])
 
         mask = mask_short_wick & mask_long_wick & mask_maximum & mask_green
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "shooting"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "shooting"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
-        if filtered_data.empty:
-            print("No shooting star pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Shooting star patterns detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No shooting star pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Shooting star patterns detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def bear_engulf(self) -> pd.DataFrame:
+    def bear_engulf(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         A bearish engulfing pattern occurs at the end of an uptrend.
         The first candle has a small green body that is engulfed by a subsequent long red candle.
@@ -430,29 +442,30 @@ class Identify:
         """
 
         # Second candle has a red body
-        mask_second_red = (self.data["Price"] < self.data["Open"])
+        mask_second_red = (df["Price"] < df["Open"])
         # First candle has a green body
-        mask_first_green = (self.data["Price"].shift(1) > self.data["Open"].shift(1))
+        mask_first_green = (df["Price"].shift(1) > df["Open"].shift(1))
         # First and second candles have short and long bodies (less than or greater than the 50th percentile)
-        mask_first_short = (self.data["Body"].shift(1) <= self.data["50 Body"])
-        mask_second_long = (self.data["Body"] >= self.data["50 Body"])
+        mask_first_short = (df["Body"].shift(1) <= df["50 Body"])
+        mask_second_long = (df["Body"] >= df["50 Body"])
         # First candle is engulfed by the second candle
-        mask_engulf = (self.data["Low"] < self.data["Low"].shift(1)) & (self.data["High"] > self.data["High"].shift(1))
+        mask_engulf = (df["Low"] < df["Low"].shift(1)) & (df["High"] > df["High"].shift(1))
 
         mask = mask_first_green & mask_second_red & mask_first_short & mask_second_long & mask_engulf
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "bear_engulf"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "bear_engulf"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
-        if filtered_data.empty:
-            print("No bearish engulfing pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Bearish engulfing patterns detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No bearish engulfing pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Bearish engulfing patterns detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def evening(self) -> pd.DataFrame:
+    def evening(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The evening star is a three-candlestick pattern that is the equivalent of the bullish morning star.
         It is formed of a short candle sandwiched between a long green candle and a large red candlestick.
@@ -462,29 +475,30 @@ class Identify:
         """
 
         # Third candle has a red body
-        mask_third_red = (self.data["Open"] > self.data["Price"])
+        mask_third_red = (df["Open"] > df["Price"])
         # First candle has a green body
-        mask_first_green = (self.data["Price"].shift(2) > self.data["Open"].shift(2))
+        mask_first_green = (df["Price"].shift(2) > df["Open"].shift(2))
         # First and third candles have long bodies (body greater than the 50th percentile)
-        mask_first_long = (self.data["Body"].shift(2) >= self.data["50 Body"])
-        mask_third_long = (self.data["Body"] >= self.data["50 Body"])
+        mask_first_long = (df["Body"].shift(2) >= df["50 Body"])
+        mask_third_long = (df["Body"] >= df["50 Body"])
         # Second candle has a short body (less than the 25th percentile)
-        mask_second_short = (self.data["Body"].shift(1) <= self.data["25 Body"])
+        mask_second_short = (df["Body"].shift(1) <= df["25 Body"])
 
         mask = mask_first_green & mask_third_red & mask_first_long & mask_third_long & mask_second_short
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "evening"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "evening"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
-        if filtered_data.empty:
-            print("No evening star pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Evening star pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No evening star pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Evening star pattern detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def crows(self) -> pd.DataFrame:
+    def crows(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The three black crows candlestick pattern comprises of three consecutive long red candles with short or non-existent wicks.
         Each session opens at a similar price to the previous day,
@@ -495,28 +509,29 @@ class Identify:
         """
 
         # All three candles have a red body
-        mask_first_red = (self.data["Open"].shift(2) > self.data["Price"].shift(2))
-        mask_second_red = (self.data["Open"].shift(1) > self.data["Price"].shift(1))
-        mask_third_red = (self.data["Open"] > self.data["Price"])
+        mask_first_red = (df["Open"].shift(2) > df["Price"].shift(2))
+        mask_second_red = (df["Open"].shift(1) > df["Price"].shift(1))
+        mask_third_red = (df["Open"] > df["Price"])
         # All three with very small wicks
-        mask_first_wicks = (0.2*self.data["Body"].shift(2) >= self.data["L-Wick"].shift(2)) & (0.2*self.data["Body"].shift(2) >= self.data["U-Wick"].shift(2))
-        mask_second_wicks = (0.2*self.data["Body"].shift(1) >= self.data["L-Wick"].shift(1)) & (0.2*self.data["Body"].shift(1) >= self.data["U-Wick"].shift(1))
-        mask_third_wicks = (0.2*self.data["Body"] >= self.data["L-Wick"]) & (0.2*self.data["Body"] >= self.data["U-Wick"])
+        mask_first_wicks = (0.2*df["Body"].shift(2) >= df["L-Wick"].shift(2)) & (0.2*df["Body"].shift(2) >= df["U-Wick"].shift(2))
+        mask_second_wicks = (0.2*df["Body"].shift(1) >= df["L-Wick"].shift(1)) & (0.2*df["Body"].shift(1) >= df["U-Wick"].shift(1))
+        mask_third_wicks = (0.2*df["Body"] >= df["L-Wick"]) & (0.2*df["Body"] >= df["U-Wick"])
 
         mask = mask_first_red & mask_second_red & mask_third_red & mask_first_wicks & mask_second_wicks & mask_third_wicks
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "crows"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "crows"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
 
-        if filtered_data.empty:
-            print("No three black crows pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Three black crows pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No three black crows pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Three black crows pattern detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def cloud(self) -> pd.DataFrame:
+    def cloud(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The dark cloud cover candlestick pattern indicates a bearish reversal,
         a black cloud over the previous day's optimism.
@@ -528,28 +543,29 @@ class Identify:
         """
 
         # First candle has a green body
-        mask_first_green = (self.data["Price"].shift(1) > self.data["Open"].shift(1))
+        mask_first_green = (df["Price"].shift(1) > df["Open"].shift(1))
         # Second candle has a red body
-        mask_second_red = (self.data["Open"] > self.data["Price"])
+        mask_second_red = (df["Open"] > df["Price"])
         # Red candle opens above the previous green body
-        mask_red_open = (self.data["Open"] > self.data["Price"].shift(1))
+        mask_red_open = (df["Open"] > df["Price"].shift(1))
         # Red candle closes below the midpoint of the green body
-        mask_red_close = (self.data["Price"] < self.data["Open"].shift(1) + self.data["Body"].shift(1)/2)
+        mask_red_close = (df["Price"] < df["Open"].shift(1) + df["Body"].shift(1)/2)
 
         mask = mask_first_green & mask_second_red & mask_red_open & mask_red_close
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "cloud"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
-
-        if filtered_data.empty:
-            print("No dark cloud cover pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Dark cloud cover pattern detected at:")
-            print(filtered_data)
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "cloud"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "down"
+        
+        if statement:
+            if filtered_data.empty:
+                print("No dark cloud cover pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Dark cloud cover pattern detected at:")
+                print(filtered_data)
 
         return filtered_data
     
-    def doji(self) -> pd.DataFrame:
+    def doji(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         When a market's open and close are almost at the same price point,
         the candlestick resembles a cross or plus sign,
@@ -561,23 +577,24 @@ class Identify:
         """
 
         # Very small bodies
-        mask_first_body = (self.data["Body"].shift(1) < self.data["5 Body"].shift(1))
-        mask_second_body = (self.data["Body"] < self.data["5 Body"])
+        mask_first_body = (df["Body"].shift(1) < df["5 Body"].shift(1))
+        mask_second_body = (df["Body"] < df["5 Body"])
 
         mask = mask_first_body & mask_second_body
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "doji"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "doji"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
 
-        if filtered_data.empty:
-            print("No doji pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Doji pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No doji pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Doji pattern detected at:")
+                print(filtered_data)
         
         return filtered_data
     
-    def spinning(self) -> pd.DataFrame:
+    def spinning(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The spinning top candlestick pattern has a short body centered between wicks of equal length.
         The pattern indicates indecision in the market,
@@ -591,26 +608,27 @@ class Identify:
         """
 
         # Short bodies
-        mask_first_body = (self.data["Body"].shift(1) < self.data["25 Body"].shift(1))
-        mask_second_body = (self.data["Body"] < self.data["25 Body"])
+        mask_first_body = (df["Body"].shift(1) < df["25 Body"].shift(1))
+        mask_second_body = (df["Body"] < df["25 Body"])
         # Wicks with approximately equal length (less than 20% difference)
-        mask_first_wick = (abs(self.data["U-Wick"].shift(1) - self.data["L-Wick"].shift(1)) < 0.2*self.data["U-Wick"].shift(1))
-        mask_second_wick = (abs(self.data["U-Wick"] - self.data["L-Wick"]) < 0.2*self.data["U-Wick"])
+        mask_first_wick = (abs(df["U-Wick"].shift(1) - df["L-Wick"].shift(1)) < 0.2*df["U-Wick"].shift(1))
+        mask_second_wick = (abs(df["U-Wick"] - df["L-Wick"]) < 0.2*df["U-Wick"])
 
         mask = mask_first_body & mask_second_body & mask_first_wick & mask_second_wick
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "spinning"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
-
-        if filtered_data.empty:
-            print("No spinning top pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Spinning top pattern detected at:")
-            print(filtered_data)
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "spinning"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
+        
+        if statement:
+            if filtered_data.empty:
+                print("No spinning top pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Spinning top pattern detected at:")
+                print(filtered_data)
         
         return filtered_data
     
-    def falling(self) -> pd.DataFrame:
+    def falling(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         Three-method formation patterns are used to predict the continuation of a current trend, be it bearish or bullish.
         
@@ -621,29 +639,30 @@ class Identify:
         """
 
         # First and last bodies are red
-        mask_red = (self.data["Open"].shift(4) > self.data["Price"].shift(4)) & (self.data["Open"] > self.data["Price"])
+        mask_red = (df["Open"].shift(4) > df["Price"].shift(4)) & (df["Open"] > df["Price"])
         # Three bodies in the middle are all green
-        mask_green = (self.data["Price"].shift(3) > self.data["Open"].shift(3)) & (self.data["Price"].shift(2) > self.data["Open"].shift(2)) & (self.data["Price"].shift(1) > self.data["Open"].shift(1))
+        mask_green = (df["Price"].shift(3) > df["Open"].shift(3)) & (df["Price"].shift(2) > df["Open"].shift(2)) & (df["Price"].shift(1) > df["Open"].shift(1))
         # Green candles contained within the range of the red bodies
-        mask_contain_first = (np.minimum(self.data["Low"], self.data["Low"].shift(4)) < self.data["Low"].shift(3))
-        mask_contain_third = (np.maximum(self.data["High"], self.data["High"].shift(4)) > self.data["High"].shift(1))
+        mask_contain_first = (np.minimum(df["Low"], df["Low"].shift(4)) < df["Low"].shift(3))
+        mask_contain_third = (np.maximum(df["High"], df["High"].shift(4)) > df["High"].shift(1))
         # There is a falling trend
-        mask_falling = (self.data["Price"].shift(4) > self.data["Price"])
+        mask_falling = (df["Price"].shift(4) > df["Price"])
 
         mask = mask_red & mask_green & mask_contain_first & mask_contain_third & mask_falling
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "falling"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "falling"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
 
-        if filtered_data.empty:
-            print("No falling three method pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Falling three method pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No falling three method pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Falling three method pattern detected at:")
+                print(filtered_data)
         
         return filtered_data
     
-    def rising(self) -> pd.DataFrame:
+    def rising(self, df: pd.DataFrame, statement: Optional[bool] = False) -> pd.DataFrame:
         """
         The opposite is true for the bullish pattern, called the 'rising three methods' candlestick pattern.
         It comprises of three short reds sandwiched within the range of two long greens.
@@ -651,40 +670,67 @@ class Identify:
         """
 
         # First and last bodies are green
-        mask_green = (self.data["Price"].shift(4) > self.data["Open"].shift(4)) & (self.data["Price"] > self.data["Open"])
+        mask_green = (df["Price"].shift(4) > df["Open"].shift(4)) & (df["Price"] > df["Open"])
         # Three bodies in the middle are all red
-        mask_red = (self.data["Open"].shift(3) > self.data["Price"].shift(3)) & (self.data["Open"].shift(2) > self.data["Price"].shift(2)) & (self.data["Open"].shift(1) > self.data["Price"].shift(1))
+        mask_red = (df["Open"].shift(3) > df["Price"].shift(3)) & (df["Open"].shift(2) > df["Price"].shift(2)) & (df["Open"].shift(1) > df["Price"].shift(1))
         # Red candles contained within the range of the green bodies
-        mask_contain_first = (np.minimum(self.data["Low"], self.data["Low"].shift(4)) < self.data["Low"].shift(3))
-        mask_contain_third = (np.maximum(self.data["High"], self.data["High"].shift(4)) > self.data["High"].shift(1))
+        mask_contain_first = (np.minimum(df["Low"], df["Low"].shift(4)) < df["Low"].shift(3))
+        mask_contain_third = (np.maximum(df["High"], df["High"].shift(4)) > df["High"].shift(1))
         # There is a rising trend
-        mask_falling = (self.data["Price"] > self.data["Price"].shift(4))
+        mask_falling = (df["Price"] > df["Price"].shift(4))
 
         mask = mask_red & mask_green & mask_contain_first & mask_contain_third & mask_falling
-        filtered_data = self.data.loc[mask].copy()
-        self.data.loc[mask, "Pattern"] = filtered_data["Pattern"] = "rising"
-        self.data.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
+        filtered_data = df.loc[mask].copy()
+        df.loc[mask, "Pattern"] = filtered_data["Pattern"] = "rising"
+        df.loc[mask, "Trend"] = filtered_data["Trend"] = "cont"
 
-        if filtered_data.empty:
-            print("No rising three method pattern detected from", self.start_date, "to", self.end_date)
-        else:
-            print("Rising three method pattern detected at:")
-            print(filtered_data)
+        if statement:
+            if filtered_data.empty:
+                print("No rising three method pattern detected from", self.start_date, "to", self.end_date)
+            else:
+                print("Rising three method pattern detected at:")
+                print(filtered_data)
         
         return filtered_data
     
-    def monte_carlo(self,
-                    copies: int,
-                    plot: Optional[bool] = True) -> pd.DataFrame:
+    def analyse_all(self, df: pd.DataFrame, df_val: int) -> pd.DataFrame:
+        """
+        Calculate important derivative data
+        """
+
+        df = df[df["DF"] == df_val].copy()
+
+        df["Body"] = abs(df["Open"] - df["Price"])
+        df["L-Wick"] = df[["Open", "Price"]].min(axis=1) - df["Low"]
+        df["U-Wick"] = df["High"] - df[["Open", "Price"]].max(axis=1)
+        df = expanding_quantiles(df, "Body", [0.05, 0.25, 0.50])
+        look_back, look_forward = 3, 1
+        df["Min"] = (df["Price"] == asym_rolling_minmax(df, look_back, look_forward, True))
+        df["Max"] = (df["Price"] == asym_rolling_minmax(df, look_back, look_forward, False))
+        df["Pattern"] = ""
+        df["Trend"] = ""
+
+        all = pd.concat([self.hammer(df), self.inv_hammer(df), self.bull_engulf(df), self.piercing(df),
+                         self.morning(df), self.soldiers(df), self.hanging(df), self.shooting(df),
+                         self.bear_engulf(df), self.evening(df), self.crows(df), self.cloud(df),
+                         self.doji(df), self.spinning(df), self.falling(df), self.rising(df)])
+        all.sort_index(inplace=True)
+        
+        return all
+    
+    def monte_carlo(self, copies: int, plot: Optional[bool] = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Get Monte Carlo data and plot it
         """
 
-        all_data = resampled_data(self.country, copies)
-        self.mc_data = all_data
+        all_data = resampled_data(self.country, copies, self.start_date, self.end_date)
+        analysed_df = []
+        for i in range(copies + 1):
+            analysed_df.append(self.analyse_all(all_data[all_data["DF"] == i], i))
+        df_combined = pd.concat(analysed_df)
 
         if plot:
             multiple_candlestick(self.country, all_data, self.start_date)
             monte_carlo_paths(self.country, all_data, self.start_date)
         
-        return all_data
+        return all_data, df_combined

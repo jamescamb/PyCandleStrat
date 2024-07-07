@@ -16,10 +16,10 @@ class Strategy:
     def __init__(self,
                  country: str,
                  data: pd.DataFrame,
-                 mc_data: pd.DataFrame) -> None:
+                 mc_strat: pd.DataFrame) -> None:
 
         self.data = data
-        self.mc_data = mc_data
+        self.mc_strat = mc_strat
         self.country = country
         data["Action"] = "hold"
     
@@ -34,9 +34,9 @@ class Strategy:
 
         print("In Sample")
         returns = []
-        self.hold_trader(self.mc_data, True)
-        for i in range(1, self.mc_data["DF"].iloc[-1] + 1):
-            returns.append(self.naive_trader(self.mc_data[self.mc_data["DF"] == i]))
+        self.hold_trader(self.mc_strat, True)
+        for i in range(1, self.mc_strat["DF"].iloc[-1] + 1):
+            returns.append(self.naive_trader(self.mc_strat[self.mc_strat["DF"] == i]))
         returns = np.array(returns)
         mean, std = np.mean(returns), np.std(returns)
         print("Naive candlestick trader gives on average {:.4f}% net increase on bond yield with {:.4f} standard deviation".format(mean, std))
