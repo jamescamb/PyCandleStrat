@@ -5,21 +5,25 @@ MIT License 2024
 """
 
 from analysis import Identify
-from trading import Strategy
+from trading import Execute
 
-country = "US"
-pattern = "all"
-start_date = "2024-01-01"
+COUNTRY = "US"
+PATTERN = "all"
+START = "2024-01-01"
+MC_COPIES = 20
 
 #### DATA ANALYSIS
-ident = Identify(country, pattern, start_date)
-#ident.print_data(10)
-#ident.initial_plot()
-ident.analyse_pattern()
-mc_df, strat_df = ident.monte_carlo(20)
+real = Identify(COUNTRY, PATTERN, printout=True, start_date=START)
+#real.print_data(10)
+#real.initial_plot()
+real.analyse_pattern()
+mc_data = real.monte_carlo(MC_COPIES)
+
+synthetic = Identify(COUNTRY, PATTERN, start_date=START, import_df=mc_data)
+synthetic.analyse_pattern()
 
 ### TRADING ANALYSIS
-strat = Strategy(country, mc_df, strat_df)
+#strat = Execute(country, mc_df, strat_df)
 #returns = strat.evaluate()
 
 # TODO:

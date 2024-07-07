@@ -8,9 +8,9 @@ import pandas as pd
 
 from typing import Optional
 
-class Strategy:
+class Execute:
     """
-    OOP strategy class
+    OOP execution class
     """
 
     def __init__(self,
