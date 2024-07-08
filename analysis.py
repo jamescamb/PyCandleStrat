@@ -699,31 +699,6 @@ class Identify:
         
         return filtered_data
     
-    def analyse_all(self, df: pd.DataFrame, df_val: int) -> pd.DataFrame:
-        """
-        Calculate important derivative data
-        """
-
-        df = df[df["DF"] == df_val].copy()
-
-        df["Body"] = abs(df["Open"] - df["Price"])
-        df["L-Wick"] = df[["Open", "Price"]].min(axis=1) - df["Low"]
-        df["U-Wick"] = df["High"] - df[["Open", "Price"]].max(axis=1)
-        df = expanding_quantiles(df, "Body", [0.05, 0.25, 0.50])
-        look_back, look_forward = 3, 1
-        df["Min"] = (df["Price"] == asym_rolling_minmax(df, look_back, look_forward, True))
-        df["Max"] = (df["Price"] == asym_rolling_minmax(df, look_back, look_forward, False))
-        df["Pattern"] = ""
-        df["Trend"] = ""
-
-        all = pd.concat([self.hammer(df), self.inv_hammer(df), self.bull_engulf(df), self.piercing(df),
-                         self.morning(df), self.soldiers(df), self.hanging(df), self.shooting(df),
-                         self.bear_engulf(df), self.evening(df), self.crows(df), self.cloud(df),
-                         self.doji(df), self.spinning(df), self.falling(df), self.rising(df)])
-        all.sort_index(inplace=True)
-        
-        return all
-    
     def monte_carlo(self, copies: int, plot: Optional[bool] = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Get Monte Carlo data and plot it

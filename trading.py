@@ -6,7 +6,7 @@ Trading government bonds
 import numpy as np
 import pandas as pd
 
-from typing import Optional
+from typing import Optional, Tuple
 
 class Execute:
     """
@@ -15,45 +15,47 @@ class Execute:
 
     def __init__(self,
                  country: str,
-                 data: pd.DataFrame,
-                 mc_strat: pd.DataFrame) -> None:
+                 data: pd.DataFrame) -> None:
 
         self.data = data
-        self.mc_strat = mc_strat
         self.country = country
         data["Action"] = "hold"
     
-    def evaluate(self) -> float:
+    def evaluate(self) -> Tuple[float, float, float, float]:
         """
         Evaluate all trading strategies
         """
 
         print("Out of Sample:")
-        self.hold_trader(self.data, True)
-        self.naive_trader(self.data, True)
+        self.hold_trader(self.data[self.data["DF"] == 0], True)
+        self.naive_trader(self.data[self.data["DF"] == 0], True)
 
-        print("In Sample")
-        returns = []
-        self.hold_trader(self.mc_strat, True)
-        for i in range(1, self.mc_strat["DF"].iloc[-1] + 1):
-            returns.append(self.naive_trader(self.mc_strat[self.mc_strat["DF"] == i]))
-        returns = np.array(returns)
-        mean, std = np.mean(returns), np.std(returns)
-        print("Naive candlestick trader gives on average {:.4f}% net increase on bond yield with {:.4f} standard deviation".format(mean, std))
+        print("In Sample:")
+        returns_hold, returns_naive = [], []
+        for i in range(1, self.data["DF"].iloc[-1] + 1):
+            returns_hold.append(self.hold_trader(self.data[self.data["DF"] == i]))
+            returns_naive.append(self.naive_trader(self.data[self.data["DF"] == i]))
+        returns_hold, returns_naive = np.array(returns_hold), np.array(returns_naive)
+        mean_hold, std_hold = np.mean(returns_hold), np.std(returns_hold)
+        mean_naive, std_naive = np.mean(returns_naive), np.std(returns_naive)
+        print("Holding trader gives on average {:.4f}% net increase on bond yield with {:.4f} standard deviation".format(mean_hold, std_hold))
+        print("Naive candlestick trader gives on average {:.4f}% net increase on bond yield with {:.4f} standard deviation".format(mean_naive, std_naive))
+
+        return mean_hold, std_hold, mean_naive, std_naive
     
-    def hold_trader(self, df: pd.DataFrame, statement: Optional[bool] = False) -> float:
+    def hold_trader(self, df: pd.DataFrame, printout: Optional[bool] = False) -> float:
         """
         Buy at the first instance and sell at the last instance
         """
 
         funds = df["Price"].iloc[-1] - df["Price"].iloc[0]
 
-        if statement:
+        if printout:
             print("Holding trader gives {:.4f}% net increase on bond yield".format(funds))
 
         return funds
 
-    def naive_trader(self, df: pd.DataFrame, statement: Optional[bool] = False) -> float:
+    def naive_trader(self, df: pd.DataFrame, printout: Optional[bool] = False) -> float:
         """
         Trade only on qualitative candlestick patterns
         """
@@ -76,7 +78,7 @@ class Execute:
         if not available:
             funds += df["Price"].iloc[-1]
 
-        if statement:
+        if printout:
             print("Naive candlestick trader gives {:.4f}% net increase on bond yield".format(funds))
         
         return funds

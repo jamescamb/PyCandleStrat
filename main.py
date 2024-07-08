@@ -7,12 +7,19 @@ MIT License 2024
 from analysis import Identify
 from trading import Execute
 
+#######################
+##### GLOBAL VARS #####
+#######################
+
 COUNTRY = "US"
 PATTERN = "all"
 START = "2024-01-01"
 MC_COPIES = 20
 
-#### DATA ANALYSIS
+#######################
+#### DATA ANALYSIS ####
+#######################
+
 real = Identify(COUNTRY, PATTERN, printout=True, start_date=START)
 #real.print_data(10)
 #real.initial_plot()
@@ -20,11 +27,14 @@ real.analyse_pattern()
 mc_data = real.monte_carlo(MC_COPIES)
 
 synthetic = Identify(COUNTRY, PATTERN, start_date=START, import_df=mc_data)
-synthetic.analyse_pattern()
+df = synthetic.analyse_pattern()
 
-### TRADING ANALYSIS
-#strat = Execute(country, mc_df, strat_df)
-#returns = strat.evaluate()
+##########################
+#### TRADING ANALYSIS ####
+##########################
+
+strat = Execute(COUNTRY, df)
+returns = strat.evaluate()
 
 # TODO:
 # Finish candlestick patterns
