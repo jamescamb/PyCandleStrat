@@ -22,7 +22,7 @@ MC_COPIES = 20
 
 real = Identify(COUNTRY, PATTERN, printout=True, start_date=START)
 #real.print_data(10)
-#real.initial_plot()
+real.initial_plot()
 real.analyse_pattern()
 mc_data = real.monte_carlo(MC_COPIES)
 

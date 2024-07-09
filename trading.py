@@ -82,3 +82,39 @@ class Execute:
             print("Naive candlestick trader gives {:.4f}% net increase on bond yield".format(funds))
         
         return funds
+    
+    def momentum_trader(self, df: pd.DataFrame, printout: Optional[bool] = False) -> float:
+        """
+        Trade using a basic momentum approach
+        """
+
+        funds = 0
+        available = True
+
+        ########################
+        ## INSERT TRADER ALGO ##
+        ########################
+
+        if not available:
+            funds += df["Price"].iloc[-1]
+
+        if printout:
+            print("Momentum trader gives {:.4f}% net increase on bond yield".format(funds))
+    
+    def markov_trader(self, df: pd.DataFrame, printout: Optional[bool] = False) -> float:
+        """
+        Trade using hidden Markov models
+        """
+
+        funds = 0
+        available = True
+
+        ########################
+        ## INSERT TRADER ALGO ##
+        ########################
+
+        if not available:
+            funds += df["Price"].iloc[-1]
+
+        if printout:
+            print("Hidden Markov model trader gives {:.4f}% net increase on bond yield".format(funds))
