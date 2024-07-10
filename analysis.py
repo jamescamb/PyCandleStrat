@@ -711,3 +711,11 @@ class Identify:
             monte_carlo_paths(self.country, all_data, self.start_date)
         
         return all_data
+    
+    def moving_averages(self, short: int, long: int) -> None:
+        """
+        Calculate short and long moving averages of closing price
+        """
+        
+        self.data["SMA"] = self.data["Price"].rolling(window=short, min_periods=1).mean()
+        self.data["LMA"] = self.data["Price"].rolling(window=long, min_periods=1).mean()
