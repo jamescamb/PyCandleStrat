@@ -37,7 +37,7 @@ strat = Execute(COUNTRY, df)
 returns = strat.evaluate()
 
 # TODO:
-# Fix derivative calculations
+# Fix derivative calculations (at start of each MC dataset)
 # Finish candlestick patterns
 # Momentum trader
 # Hidden Markov model
