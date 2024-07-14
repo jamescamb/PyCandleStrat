@@ -3,10 +3,12 @@ Import and read data, and convert it to a Pandas dataframe
 """
 
 # Import libraries
+import random
 import numpy as np
 import pandas as pd
 from typing import Optional
 
+random.seed(0)
 np.random.seed(0)
 
 def read_local_file(filename: str, confirm: Optional[bool] = True):
@@ -99,9 +101,9 @@ def filter_data(data: pd.DataFrame,
     return filtered_data
 
 def asym_rolling_minmax(data: pd.DataFrame,
-                     look_back: int,
-                     look_forward: int,
-                     minimum: bool) -> list:
+                        look_back: int,
+                        look_forward: int,
+                        minimum: bool) -> list:
     """
     Create an asymmetrical local minimum searching function
     """
@@ -133,9 +135,18 @@ def expanding_quantiles(data: pd.DataFrame,
     for i in range(1, len(data) + 1):
         result.iloc[i - 1] = data[column].iloc[:i].quantile(quantiles).values
     
-    new_data = pd.concat([data, result], axis=1)
+    return result
+
+def shuffle_with_window_size(values: list, window_size: int) -> list:
+    """
+    Shuffle a list, while maintaining consecutive values of length 'window size'
+    """
+
+    chunks = [values[i : i + window_size] for i in range(0, len(values), window_size)]
+    random.shuffle(chunks)
+    shuffled_list = [item for chunk in chunks for item in chunk]
     
-    return new_data
+    return shuffled_list
 
 def resampled_data(country: str, copies: int, start_date: str, end_date: str) -> pd.DataFrame:
     """
@@ -153,14 +164,15 @@ def resampled_data(country: str, copies: int, start_date: str, end_date: str) ->
         df.sort_values(["Date"], ignore_index=True, inplace=True)
     
     df["DF"] = 0
-    dataframes = [df]
+    dataframes = [df.copy()]
 
     for i in range(copies):
         new_df = df.copy()
         for col in ["Open", "High", "Low"]:
             new_df[col] = new_df[col] / new_df["Price"]
         new_df["Price"] = new_df["Price"].pct_change()
-        new_df.loc[1:, "Price"] = np.random.permutation(new_df.loc[1:, "Price"].values)
+        #new_df.loc[1:, "Price"] = np.random.permutation(new_df.loc[1:, "Price"].values)
+        new_df.loc[1:, "Price"] = shuffle_with_window_size(new_df.loc[1:, "Price"].values, 10)
         new_df.loc[0, "Price"] = df.loc[0, "Price"]
         for j in range(1, len(new_df)):
             new_df.at[j, "Price"] = (1 + new_df.at[j, "Price"]) * new_df.at[j - 1, "Price"]
@@ -177,3 +189,15 @@ def resampled_data(country: str, copies: int, start_date: str, end_date: str) ->
     df_combined = df_combined.loc[mask]
 
     return df_combined
+
+def count_patterns(df: pd.DataFrame) -> list:
+    """
+    Count how many patterns are identified for each Monte Carlo shuffle
+    """
+
+    n_patterns = []
+
+    for i in range(df["DF"].iloc[-1] + 1):
+        n_patterns.append(len([s for s in df[df["DF"] == i]["Pattern"] if s != ""]))
+    
+    return n_patterns

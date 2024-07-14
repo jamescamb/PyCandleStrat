@@ -85,7 +85,7 @@ class Identify:
         print("Printing scatter matrix plot")
         scatter_matrix_plot(self.data)
     
-    def analyse_pattern(self) -> pd.DataFrame:
+    def generate_covariates(self) -> pd.DataFrame:
         """
         Calculate important derivative data
         """
@@ -96,18 +96,42 @@ class Identify:
         self.data["L-Wick"] = self.data[["Open", "Price"]].min(axis=1) - self.data["Low"]
         # Calculate the upper wick length
         self.data["U-Wick"] = self.data["High"] - self.data[["Open", "Price"]].max(axis=1)
-        # Calculate quantile data of body length
-        self.data = expanding_quantiles(self.data, "Body", [0.05, 0.25, 0.50])
-        # Calculate local minimum over (asymmetrical) window size
-        #window_size = 7
-        #self.data["Min"] = (self.data["Price"] == self.data["Price"].rolling(window=window_size, center=True).min())
-        # We can only detect a local minimum look_forward days after it has happened
+
         look_back, look_forward = 3, 1
-        self.data["Min"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, True))
-        self.data["Max"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, False))
+        quantiles = [0.05, 0.25, 0.50]
+        columns = [f"{int(q*100)}" + " " + "Body" for q in quantiles]
         # Add columns that describe the patterns and trends
         self.data["Pattern"] = ""
         self.data["Trend"] = ""
+        
+        if "DF" in self.data.columns:
+            self.data["Min"] = False
+            self.data["Max"] = False
+            for i in range(self.data["DF"].iloc[-1] + 1):
+                # Calculate quantile data of body length
+                for col in columns:
+                    self.data.loc[self.data["DF"] == i, col] = expanding_quantiles(self.data[self.data["DF"] == i], "Body", quantiles)[col]
+                # Calculate local minimum over (asymmetrical) window size
+                # We can only detect a local minimum look_forward days after it has happened
+                self.data.loc[self.data["DF"] == i, "Min"] = (self.data[self.data["DF"] == i]["Price"] == asym_rolling_minmax(self.data[self.data["DF"] == i], look_back, look_forward, True))
+                self.data.loc[self.data["DF"] == i, "Max"] = (self.data[self.data["DF"] == i]["Price"] == asym_rolling_minmax(self.data[self.data["DF"] == i], look_back, look_forward, False))
+        else:
+            # Calculate quantile data of body length
+            result = expanding_quantiles(self.data, "Body", quantiles)
+            self.data = pd.concat([self.data, result], axis=1)
+            # Calculate local minimum over (asymmetrical) window size
+            # We can only detect a local minimum look_forward days after it has happened
+            self.data["Min"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, True))
+            self.data["Max"] = (self.data["Price"] == asym_rolling_minmax(self.data, look_back, look_forward, False))
+
+        return self.data
+    
+    def analyse_pattern(self) -> pd.DataFrame:
+        """
+        Analyse data for known patterns
+        """
+
+        self.generate_covariates()
 
         if self.pattern == "all":
             all = pd.concat([self.hammer(), self.inv_hammer(), self.bull_engulf(), self.piercing(),
@@ -117,6 +141,7 @@ class Identify:
             all.sort_index(inplace=True)
             if self.printout:
                 print(all)
+                print(len(all), "patterns identified")
         elif self.pattern == "hammer":
             print("Searching for bullish hammer pattern")
             self.hammer()
