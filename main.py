@@ -14,7 +14,7 @@ from trading import Execute
 COUNTRY = "US"
 PATTERN = "all"
 START = "2024-01-01"
-MC_COPIES = 20
+MC_COPIES = 10
 
 #######################
 #### DATA ANALYSIS ####
@@ -38,6 +38,7 @@ returns = strat.evaluate()
 
 # TODO:
 # Finish candlestick patterns
+# Fix bond returns
 # Momentum trader
 # Hidden Markov model
 # Monte Carlo simulations
