@@ -38,7 +38,7 @@ returns = strat.evaluate()
 
 # TODO:
 # Finish candlestick patterns
-# Fix bond returns
+# Fix bond returns 
 # Momentum trader
 # Hidden Markov model
 # Monte Carlo simulations
