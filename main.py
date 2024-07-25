@@ -43,4 +43,4 @@ returns = strat.evaluate()
 # Hidden Markov model
 # Monte Carlo simulations
 # ML approaches
-# Options pricing
+# Options pricing opportunities
